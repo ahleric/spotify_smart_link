@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { releaseData } from '@/lib/config';
 
+// Cloudflare Pages 需 Edge Runtime，确保本路由在 Edge 环境下运行。
+export const runtime = 'edge';
+
 // CAPI 服务器端事件上报
 export async function POST(request: Request) {
   const { eventName = 'Lead' } = (await request.json().catch(() => ({}))) as {
