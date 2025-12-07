@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局基础样式：保持极简，交给 Tailwind 工具类控制。 */
+body {
+  background-color: #000;
+}
