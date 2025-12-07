@@ -4,15 +4,17 @@ import { useEffect } from 'react';
 
 type FbqFunction = (...args: any[]) => void;
 
+type FbqInstance = FbqFunction & {
+  callMethod?: FbqFunction;
+  queue?: unknown[];
+  push?: FbqFunction;
+  loaded?: boolean;
+  version?: string;
+};
+
 declare global {
   interface Window {
-    fbq?: FbqFunction & {
-      callMethod?: FbqFunction;
-      queue?: unknown[];
-      push?: FbqFunction;
-      loaded?: boolean;
-      version?: string;
-    };
+    fbq?: FbqInstance;
   }
 }
 
@@ -36,16 +38,15 @@ export default function PixelBase({ pixelId }: PixelBaseProps) {
     }
 
     // 原生 Meta Pixel 轻量化初始化。
-    const fbq: FbqFunction = (...args) => {
-      (window.fbq as any)?.callMethod?.(...args) ??
-        (window.fbq as any)?.queue?.push(args);
+    const fbqInstance: FbqInstance = (...args) => {
+      window.fbq?.callMethod?.(...args) ?? window.fbq?.queue?.push(args);
     };
 
-    window.fbq = fbq as typeof window.fbq;
-    (window.fbq as any).queue = [];
-    (window.fbq as any).loaded = true;
-    (window.fbq as any).version = '2.0';
-    (window.fbq as any).push = (...args: any[]) => fbq(...args);
+    window.fbq = fbqInstance;
+    fbqInstance.queue = [];
+    fbqInstance.loaded = true;
+    fbqInstance.version = '2.0';
+    fbqInstance.push = (...args: any[]) => fbqInstance(...args);
 
     const scriptId = 'facebook-pixel';
     if (!document.getElementById(scriptId)) {
@@ -65,6 +66,7 @@ export default function PixelBase({ pixelId }: PixelBaseProps) {
   // noscript 像素用于兜底（不增加体积，保持可访问性）
   return (
     <noscript>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         height="1"
         width="1"

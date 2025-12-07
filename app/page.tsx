@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useCallback } from 'react';
-import { Play } from 'lucide-react';
 import { releaseData } from '@/lib/config';
 
 export default function Home() {
