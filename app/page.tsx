@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Suspense, useCallback, useMemo } from 'react';
+import { Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { releaseData } from '@/lib/config';
 
@@ -19,11 +19,23 @@ function PageContent() {
     [testEventCode],
   );
 
+  // 若存在 test_event_code，则显式带上代码发送 PageView（避免测试模式未捕获）
+  useEffect(() => {
+    if (!testEventCode) return;
+    if (typeof window === 'undefined') return;
+    window.fbq?.('track', 'PageView', { test_event_code: testEventCode });
+  }, [testEventCode]);
+
   const handlePlay = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    // 前端触发 Pixel（附带 eventID 便于 Test Events/去重）
-    window.fbq?.('track', 'Lead', {}, { eventID: eventId });
+    // 前端触发 Pixel（附带 eventID 和 test_event_code 便于 Test Events/去重）
+    window.fbq?.(
+      'track',
+      'Lead',
+      testEventCode ? { test_event_code: testEventCode } : {},
+      { eventID: eventId },
+    );
 
     // 组装 CAPI 负载
     const payload = JSON.stringify({
