@@ -20,6 +20,11 @@ export async function POST(request: Request) {
   const headerList = headers();
   const userAgent = headerList.get('user-agent') ?? '';
   const forwardedFor = headerList.get('x-forwarded-for');
+  const cookie = headerList.get('cookie') ?? '';
+  const fbp = cookie.match(/_fbp=([^;]+)/)?.[1];
+  const fbc =
+    cookie.match(/_fbc=([^;]+)/)?.[1] ??
+    cookie.match(/fbclid=([^;]+)/)?.[1];
   const ip =
     forwardedFor?.split(',')[0]?.trim() ??
     headerList.get('x-real-ip') ??
@@ -55,6 +60,9 @@ export async function POST(request: Request) {
         user_data: {
           client_user_agent: userAgent,
           client_ip_address: ip,
+          fbp,
+          fbc,
+          external_id: eventId,
         },
       },
     ],
