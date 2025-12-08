@@ -1,21 +1,26 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback } from 'react';
+import { Suspense, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { releaseData } from '@/lib/config';
 
-export default function Home() {
+function PageContent() {
   const searchParams = useSearchParams();
+  const testEventCode = useMemo(
+    () =>
+      searchParams.get('test_event_code')?.trim() ||
+      searchParams.get('test_event')?.trim() ||
+      '',
+    [searchParams],
+  );
+  const eventId = useMemo(
+    () => testEventCode || `lead-${Date.now()}`,
+    [testEventCode],
+  );
 
   const handlePlay = useCallback(() => {
     if (typeof window === 'undefined') return;
-
-    const testEventCode =
-      searchParams.get('test_event_code')?.trim() ||
-      searchParams.get('test_event')?.trim() ||
-      '';
-    const eventId = testEventCode || `lead-${Date.now()}`;
 
     // 前端快速触发 Pixel 事件
     window.fbq?.('track', 'Lead', {}, { eventID: eventId });
@@ -102,5 +107,13 @@ export default function Home() {
         </button>
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <PageContent />
+    </Suspense>
   );
 }
