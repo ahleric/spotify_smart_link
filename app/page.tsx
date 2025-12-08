@@ -22,27 +22,43 @@ function PageContent() {
   const handlePlay = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    // 前端快速触发 Pixel 事件
+    // 前端触发 Pixel（附带 eventID 便于 Test Events/去重）
     window.fbq?.('track', 'Lead', {}, { eventID: eventId });
 
-    // CAPI 异步上报，不阻塞跳转
-    try {
-      fetch('/api/track-event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventName: 'Lead',
-          eventId,
-          testEventCode,
-        }),
-      }).catch(() => undefined);
-    } catch {
-      // 静默兜底，避免影响跳转
-    }
+    // 组装 CAPI 负载
+    const payload = JSON.stringify({
+      eventName: 'Lead',
+      eventId,
+      testEventCode,
+    });
 
+    // 优先 sendBeacon，回落 fetch keepalive，避免跳转时丢包
+    const sendCapi = () => {
+      const ok =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.sendBeacon === 'function' &&
+        navigator.sendBeacon('/api/track-event', payload);
+      if (!ok) {
+        fetch('/api/track-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => undefined);
+      }
+    };
+
+    sendCapi();
+
+    // 给像素/Beacon 留一小段时间，再触发深链
+    window.setTimeout(() => {
+      window.location.href = releaseData.spotifyDeepLink;
+    }, 200);
+
+    // 兜底跳转 Web 链接，避免 App 未响应
     const timer = window.setTimeout(() => {
       window.location.href = releaseData.spotifyWebLink;
-    }, 500);
+    }, 800);
 
     const clear = () => {
       window.clearTimeout(timer);
@@ -50,8 +66,7 @@ function PageContent() {
     };
 
     document.addEventListener('visibilitychange', clear);
-    window.location.href = releaseData.spotifyDeepLink;
-  }, [searchParams]);
+  }, [eventId, testEventCode]);
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-5 py-10">
