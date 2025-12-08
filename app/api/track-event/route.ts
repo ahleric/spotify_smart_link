@@ -7,8 +7,14 @@ export const runtime = 'edge';
 
 // CAPI 服务器端事件上报
 export async function POST(request: Request) {
-  const { eventName = 'Lead' } = (await request.json().catch(() => ({}))) as {
+  const {
+    eventName = 'Lead',
+    eventId,
+    testEventCode,
+  } = (await request.json().catch(() => ({}))) as {
     eventName?: string;
+    eventId?: string;
+    testEventCode?: string;
   };
 
   const headerList = headers();
@@ -45,12 +51,14 @@ export async function POST(request: Request) {
         event_time: Math.floor(Date.now() / 1000),
         action_source: 'website',
         event_source_url: headerList.get('referer') ?? '',
+        event_id: eventId,
         user_data: {
           client_user_agent: userAgent,
           client_ip_address: ip,
         },
       },
     ],
+    test_event_code: testEventCode,
   };
 
   try {

@@ -2,21 +2,34 @@
 
 import Image from 'next/image';
 import { useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { releaseData } from '@/lib/config';
 
 export default function Home() {
+  const searchParams = useSearchParams();
+
   const handlePlay = useCallback(() => {
     if (typeof window === 'undefined') return;
 
+    const testEventCode =
+      searchParams.get('test_event_code')?.trim() ||
+      searchParams.get('test_event')?.trim() ||
+      '';
+    const eventId = testEventCode || `lead-${Date.now()}`;
+
     // 前端快速触发 Pixel 事件
-    window.fbq?.('track', 'Lead');
+    window.fbq?.('track', 'Lead', {}, { eventID: eventId });
 
     // CAPI 异步上报，不阻塞跳转
     try {
       fetch('/api/track-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventName: 'Lead' }),
+        body: JSON.stringify({
+          eventName: 'Lead',
+          eventId,
+          testEventCode,
+        }),
       }).catch(() => undefined);
     } catch {
       // 静默兜底，避免影响跳转
@@ -33,7 +46,7 @@ export default function Home() {
 
     document.addEventListener('visibilitychange', clear);
     window.location.href = releaseData.spotifyDeepLink;
-  }, []);
+  }, [searchParams]);
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-5 py-10">
