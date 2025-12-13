@@ -83,7 +83,7 @@ function PageContent() {
   }, [eventId, testEventCode]);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center gap-6 px-5 py-10 pb-32">
+    <main className="relative flex min-h-screen flex-col items-center justify-start gap-6 px-5 pt-6 pb-32">
       {/* 背景：轻量模糊封面 + 暗色渐变 */}
       <div className="absolute inset-0 -z-10">
         <Image
@@ -98,19 +98,19 @@ function PageContent() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.25),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.2),transparent_30%)]" />
       </div>
 
-      <div className="flex w-full max-w-md flex-col items-center gap-5 mb-6">
+      <div className="flex w-full max-w-md flex-col items-center gap-5 mb-4">
         <div className="relative w-full max-w-sm overflow-hidden rounded-[24px] shadow-[0_16px_36px_rgba(0,0,0,0.35)]">
           <Image
-            src={releaseData.coverImage}
-            alt={`${releaseData.trackTitle} Artwork`}
-            width={900}
-            height={900}
-            sizes="(max-width: 768px) 80vw, 420px"
-            className="h-auto w-full object-cover"
-            priority
-            loading="eager"
-          />
-        </div>
+          src={releaseData.coverImage}
+          alt={`${releaseData.trackTitle} Artwork`}
+          width={900}
+          height={900}
+          sizes="(max-width: 768px) 78vw, 420px"
+          className="h-auto w-full object-cover"
+          priority
+          loading="eager"
+        />
+      </div>
 
         <div className="text-center">
           <h1 className="text-2xl font-bold uppercase tracking-tight text-white">
