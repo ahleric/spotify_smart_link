@@ -33,7 +33,6 @@ export default function PixelBase({ pixelId }: PixelBaseProps) {
     // 若已存在实例则仅追加初始化，避免重复插入脚本。
     if (window.fbq) {
       window.fbq('init', pixelId);
-      window.fbq('track', 'PageView');
       return;
     }
 
@@ -58,7 +57,6 @@ export default function PixelBase({ pixelId }: PixelBaseProps) {
     }
 
     window.fbq('init', pixelId);
-    window.fbq('track', 'PageView');
   }, [pixelId]);
 
   if (!pixelId) return null;

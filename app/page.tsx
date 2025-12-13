@@ -19,11 +19,13 @@ function PageContent() {
     [testEventCode],
   );
 
-  // 若存在 test_event_code，则显式带上代码发送 PageView（避免测试模式未捕获）
+  // 单次发送 PageView，可携带 test_event_code，避免重复
   useEffect(() => {
-    if (!testEventCode) return;
     if (typeof window === 'undefined') return;
-    window.fbq?.('track', 'PageView', { test_event_code: testEventCode });
+    if ((window as any).__pageview_sent) return;
+    (window as any).__pageview_sent = true;
+    const payload = testEventCode ? { test_event_code: testEventCode } : {};
+    window.fbq?.('track', 'PageView', payload);
   }, [testEventCode]);
 
   const handlePlay = useCallback(() => {
