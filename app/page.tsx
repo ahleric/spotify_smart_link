@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Suspense, useCallback, useEffect, useMemo } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { releaseData } from '@/lib/config';
 
@@ -18,6 +18,11 @@ function PageContent() {
     () => testEventCode || `lead-${Date.now()}`,
     [testEventCode],
   );
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 单次发送 PageView，可携带 test_event_code，避免重复
   useEffect(() => {
@@ -99,20 +104,30 @@ function PageContent() {
       </div>
 
       <div className="flex w-full max-w-md flex-col items-center gap-5 mb-4">
-        <div className="relative w-full max-w-sm overflow-hidden rounded-[24px] shadow-[0_16px_36px_rgba(0,0,0,0.35)]">
+        <div
+          className={`relative w-full max-w-sm overflow-hidden rounded-[24px] shadow-[0_16px_36px_rgba(0,0,0,0.35)] transform-gpu transition duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none motion-reduce:opacity-100 ${
+            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+          style={{ transitionDelay: mounted ? '0ms' : '0ms' }}
+        >
           <Image
-          src={releaseData.coverImage}
-          alt={`${releaseData.trackTitle} Artwork`}
-          width={900}
-          height={900}
-          sizes="(max-width: 768px) 78vw, 420px"
-          className="h-auto w-full object-cover"
-          priority
-          loading="eager"
-        />
-      </div>
+            src={releaseData.coverImage}
+            alt={`${releaseData.trackTitle} Artwork`}
+            width={900}
+            height={900}
+            sizes="(max-width: 768px) 78vw, 420px"
+            className="h-auto w-full object-cover"
+            priority
+            loading="eager"
+          />
+        </div>
 
-        <div className="text-center">
+        <div
+          className={`text-center transform-gpu transition duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none motion-reduce:opacity-100 ${
+            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+          style={{ transitionDelay: mounted ? '80ms' : '0ms' }}
+        >
           <h1 className="text-2xl font-bold uppercase tracking-tight text-white">
             {releaseData.trackTitle}
           </h1>
@@ -120,7 +135,12 @@ function PageContent() {
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-4 right-4 mx-auto flex max-w-md flex-col items-center gap-3 rounded-3xl bg-white px-5 py-4 shadow-[0_12px_32px_rgba(0,0,0,0.25)]">
+      <div
+        className={`fixed bottom-6 left-4 right-4 mx-auto flex max-w-md flex-col items-center gap-3 rounded-3xl bg-white px-5 py-4 shadow-[0_12px_32px_rgba(0,0,0,0.25)] transform-gpu transition duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none motion-reduce:opacity-100 ${
+          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}
+        style={{ transitionDelay: mounted ? '140ms' : '0ms' }}
+      >
         <Image
           src="/spotify-logo.png"
           alt="Spotify"
