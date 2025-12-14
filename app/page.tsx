@@ -15,8 +15,12 @@ function PageContent() {
     [searchParams],
   );
   const eventId = useMemo(
-    () => testEventCode || `lead-${Date.now()}`,
+    () => testEventCode || `click-${Date.now()}`,
     [testEventCode],
+  );
+  const viewEventId = useMemo(
+    () => `view-${Date.now()}`,
+    [],
   );
   const [mounted, setMounted] = useState(false);
 
@@ -29,24 +33,53 @@ function PageContent() {
     if (typeof window === 'undefined') return;
     if ((window as any).__pageview_sent) return;
     (window as any).__pageview_sent = true;
-    const payload = testEventCode ? { test_event_code: testEventCode } : {};
-    window.fbq?.('track', 'PageView', payload);
-  }, [testEventCode]);
+    const payload = testEventCode
+      ? { test_event_code: testEventCode }
+      : {};
+    // 客户端自定义浏览事件
+    window.fbq?.(
+      'trackCustom',
+      'SmartLinkView',
+      payload,
+      { eventID: viewEventId },
+    );
+    // CAPI 上报浏览事件（非阻塞）
+    const viewBody = JSON.stringify({
+      eventName: 'SmartLinkView',
+      eventId: viewEventId,
+      testEventCode,
+    });
+    const sendView = () => {
+      const ok =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.sendBeacon === 'function' &&
+        navigator.sendBeacon('/api/track-event', viewBody);
+      if (!ok) {
+        fetch('/api/track-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: viewBody,
+          keepalive: true,
+        }).catch(() => undefined);
+      }
+    };
+    sendView();
+  }, [testEventCode, viewEventId]);
 
   const handlePlay = useCallback(() => {
     if (typeof window === 'undefined') return;
 
     // 前端触发 Pixel（附带 eventID 和 test_event_code 便于 Test Events/去重）
     window.fbq?.(
-      'track',
-      'Lead',
+      'trackCustom',
+      'SmartLinkClick',
       testEventCode ? { test_event_code: testEventCode } : {},
       { eventID: eventId },
     );
 
     // 组装 CAPI 负载
     const payload = JSON.stringify({
-      eventName: 'Lead',
+      eventName: 'SmartLinkClick',
       eventId,
       testEventCode,
     });

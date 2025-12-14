@@ -8,7 +8,7 @@ export const runtime = 'edge';
 // CAPI 服务器端事件上报
 export async function POST(request: Request) {
   const {
-    eventName = 'Lead',
+    eventName = 'SmartLinkClick',
     eventId,
     testEventCode,
   } = (await request.json().catch(() => ({}))) as {
