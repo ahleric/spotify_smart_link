@@ -115,7 +115,7 @@ function PageContent() {
     };
 
     document.addEventListener('visibilitychange', clear);
-  }, [eventId, testEventCode]);
+  }, [testEventCode]);
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-start gap-6 px-5 pt-6 pb-32">
