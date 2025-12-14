@@ -23,7 +23,7 @@ type PixelBaseProps = {
 };
 
 /**
- * Meta Pixel 初始化组件：优先保证轻量与一次性装载。
+ * Meta Pixel 初始化组件：轻量且仅初始化，不主动触发 PageView。
  */
 export default function PixelBase({ pixelId }: PixelBaseProps) {
   useEffect(() => {
@@ -32,7 +32,8 @@ export default function PixelBase({ pixelId }: PixelBaseProps) {
 
     // 若已存在实例则仅追加初始化，避免重复插入脚本。
     if (window.fbq) {
-      window.fbq('init', pixelId);
+      window.fbq('set', 'autoConfig', false, pixelId);
+      window.fbq('init', pixelId, {}, { autoConfig: false });
       return;
     }
 
@@ -56,22 +57,9 @@ export default function PixelBase({ pixelId }: PixelBaseProps) {
       document.head.appendChild(script);
     }
 
-    window.fbq('init', pixelId);
+    window.fbq('set', 'autoConfig', false, pixelId);
+    window.fbq('init', pixelId, {}, { autoConfig: false });
   }, [pixelId]);
 
-  if (!pixelId) return null;
-
-  // noscript 像素用于兜底（不增加体积，保持可访问性）
-  return (
-    <noscript>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        height="1"
-        width="1"
-        style={{ display: 'none' }}
-        src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
-        alt=""
-      />
-    </noscript>
-  );
+  return null;
 }
