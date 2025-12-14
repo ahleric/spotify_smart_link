@@ -14,10 +14,6 @@ function PageContent() {
       '',
     [searchParams],
   );
-  const eventId = useMemo(
-    () => testEventCode || `click-${Date.now()}`,
-    [testEventCode],
-  );
   const viewEventId = useMemo(
     () => `view-${Date.now()}`,
     [],
@@ -68,19 +64,20 @@ function PageContent() {
 
   const handlePlay = useCallback(() => {
     if (typeof window === 'undefined') return;
+    const clickEventId = `click-${Date.now()}`;
 
     // 前端触发 Pixel（附带 eventID 和 test_event_code 便于 Test Events/去重）
     window.fbq?.(
       'trackCustom',
       'SmartLinkClick',
       testEventCode ? { test_event_code: testEventCode } : {},
-      { eventID: eventId },
+      { eventID: clickEventId },
     );
 
     // 组装 CAPI 负载
     const payload = JSON.stringify({
       eventName: 'SmartLinkClick',
-      eventId,
+      eventId: clickEventId,
       testEventCode,
     });
 
