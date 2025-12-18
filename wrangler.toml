@@ -1,5 +1,6 @@
 # Cloudflare Pages 配置，开启 nodejs_compat 以兼容 Next 14 生成的 Worker 依赖。
 name = "mola-link"
-pages_build_output_dir = ".vercel/output/static"
+# 使用 Next.js 14 App Router 标准构建输出
+pages_build_output_dir = ".next"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
