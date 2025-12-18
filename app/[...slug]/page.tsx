@@ -15,7 +15,7 @@ const getRelease = async (slugSegments: string[]): Promise<ReleaseData> => {
   const { data, error } = await supabase
     .from('songs')
     .select(
-      'artist_name, track_title, cover_image_url, spotify_web_link, spotify_deep_link, meta_pixel_id, facebook_access_token, artist:artists(meta_pixel_id, facebook_access_token, name, slug)',
+      'artist_name, track_title, cover_image_url, spotify_web_link, spotify_deep_link, meta_pixel_id, facebook_access_token, artist:artists!inner(meta_pixel_id, facebook_access_token, name, slug)',
     )
     .eq('slug', slug)
     .single();
@@ -25,8 +25,9 @@ const getRelease = async (slugSegments: string[]): Promise<ReleaseData> => {
     notFound();
   }
 
-  const pixelId = data.meta_pixel_id ?? data.artist?.meta_pixel_id ?? undefined;
-  const fbToken = data.facebook_access_token ?? data.artist?.facebook_access_token ?? undefined;
+  const artist = (data as any).artist?.[0] ?? (data as any).artist ?? {};
+  const pixelId = data.meta_pixel_id ?? artist.meta_pixel_id ?? undefined;
+  const fbToken = data.facebook_access_token ?? artist.facebook_access_token ?? undefined;
 
   return {
     artistName: data.artist_name,
