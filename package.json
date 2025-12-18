@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "cf:build": "npx @cloudflare/next-on-pages build",
     "start": "next start",
     "lint": "next lint",
     "postbuild": "rm -rf .next/cache"
@@ -24,6 +25,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.11.3",
     "@types/react": "19.2.7",
     "autoprefixer": "^10.4.16",
     "eslint": "8.57.1",
