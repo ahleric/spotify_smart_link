@@ -19,6 +19,7 @@
     "async_hooks": false
   },
   "dependencies": {
+    "async_hooks": "file:./lib/async_hooks_stub.js",
     "@supabase/supabase-js": "^2.88.0",
     "@types/node": "^24.10.1",
     "lucide-react": "^0.556.0",
