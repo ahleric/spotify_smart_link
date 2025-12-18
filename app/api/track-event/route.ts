@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { releaseData } from '@/lib/config';
+import { pixelConfig } from '@/lib/config';
 
 // Cloudflare Pages 需 Edge Runtime，确保本路由在 Edge 环境下运行。
 export const runtime = 'edge';
@@ -11,10 +11,14 @@ export async function POST(request: Request) {
     eventName = 'SmartLinkClick',
     eventId,
     testEventCode,
+    metaPixelId,
+    facebookAccessToken,
   } = (await request.json().catch(() => ({}))) as {
     eventName?: string;
     eventId?: string;
     testEventCode?: string;
+    metaPixelId?: string;
+    facebookAccessToken?: string;
   };
 
   const headerList = headers();
@@ -37,14 +41,14 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!releaseData.metaPixelId) {
+  const activePixelId = metaPixelId || pixelConfig.metaPixelId;
+  const activeAccessToken = facebookAccessToken || pixelConfig.facebookAccessToken || process.env.FB_ACCESS_TOKEN;
+
+  if (!activePixelId) {
     console.warn('未配置 Pixel ID，跳过 CAPI 上报');
     return NextResponse.json({ ok: true, skipped: 'missing pixel id' });
   }
-
-  const accessToken = releaseData.facebookAccessToken || process.env.FB_ACCESS_TOKEN;
-
-  if (!accessToken) {
+  if (!activeAccessToken) {
     console.warn('未配置 FB_ACCESS_TOKEN，跳过 CAPI 上报');
     return NextResponse.json({ ok: true, skipped: 'missing token' });
   }
@@ -71,7 +75,7 @@ export async function POST(request: Request) {
 
   try {
     const fbRes = await fetch(
-      `https://graph.facebook.com/v18.0/${releaseData.metaPixelId}/events?access_token=${accessToken}`,
+      `https://graph.facebook.com/v18.0/${activePixelId}/events?access_token=${activeAccessToken}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

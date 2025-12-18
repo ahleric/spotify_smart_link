@@ -1,15 +1,42 @@
-// 静态配置：用户可在此文件调整内容，无需数据库。
-export const releaseData = {
+export type ReleaseData = {
+  artistName: string;
+  trackTitle: string;
+  coverImage: string;
+  spotifyDeepLink: string;
+  spotifyWebLink: string;
+  metaPixelId?: string;
+  facebookAccessToken?: string;
+};
+
+// 静态默认值（仅用于根路径示例页），真实页面数据来自 Supabase。
+export const fallbackReleaseData: ReleaseData = {
   artistName: 'Mola Oddity',
   trackTitle: 'HALF A SADDAY SAVING TIME',
   coverImage: '/cover.jpg',
   spotifyDeepLink: 'spotify://track/0dOp6hAL0Vf6lYk9UU3Uhn',
   spotifyWebLink: 'https://open.spotify.com/track/0dOp6hAL0Vf6lYk9UU3Uhn?si=fc784f6962fc424a',
-  metaPixelId: '1382043723511910',
-  // 优先从环境变量读取，若需要也可直接填入提供的 token。
-  facebookAccessToken:
-    process.env.FB_ACCESS_TOKEN ??
-    'EAA9vzGJqe2sBQIDWZBiZAp5Dhh88vtZAc0XU5tTiuUPsgYOOfC5vDJCa2oYj0QZBOZBhteaTy9r0JuZAnGc1Ky3kYwMcl94OaHZBP7JZCpTfotNVvEZAzJXhhAc3RVcZBkXgNtrXaLna9kn2MvqsibfI9y79jaGZAeOWZAbxqt5H1uuYOXm5F1N20RZB6uZBnLBRZAxpAZDZD',
+  metaPixelId: '',
+  facebookAccessToken: '',
+};
+
+// Pixel & CAPI 配置（从环境变量读取）。
+export const pixelConfig = {
+  metaPixelId: process.env.NEXT_PUBLIC_META_PIXEL_ID ?? '',
+  facebookAccessToken: process.env.FB_ACCESS_TOKEN ?? '',
 } as const;
 
-export type ReleaseData = typeof releaseData;
+// Supabase 连接参数（写操作将优先使用服务密钥）。
+export const supabaseConfig = {
+  url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+} as const;
+
+// 简易 Basic Auth 用于保护 /admin 与相关 API。
+export const adminAuthConfig = {
+  username: process.env.ADMIN_USERNAME ?? '',
+  password: process.env.ADMIN_PASSWORD ?? '',
+} as const;
+
+// 向后兼容导出（旧代码仍可引用 releaseData）。
+export const releaseData = fallbackReleaseData;

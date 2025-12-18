@@ -6,3 +6,19 @@
 body {
   background-color: #000;
 }
+
+@keyframes cta-ripple {
+  0% {
+    box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(29, 185, 84, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(29, 185, 84, 0);
+  }
+}
+
+.cta-ripple {
+  animation: cta-ripple 1.5s ease-out infinite;
+}

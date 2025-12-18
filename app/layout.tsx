@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
 import './globals.css';
-import { releaseData } from '@/lib/config';
-import PixelBase from '@/components/PixelBase';
+import { fallbackReleaseData } from '@/lib/config';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -12,7 +11,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: `${releaseData.artistName} - ${releaseData.trackTitle}`,
+  title: `${fallbackReleaseData.artistName} - ${fallbackReleaseData.trackTitle}`,
   description: '高性能音乐 Smart Link，优化移动端体验与转化追踪。',
 };
 
@@ -26,8 +25,6 @@ export default function RootLayout({
       <body
         className={`${manrope.variable} min-h-screen bg-black text-white antialiased`}
       >
-        {/* Meta Pixel 初始化（仅在配置存在时渲染） */}
-        <PixelBase pixelId={releaseData.metaPixelId} />
         {children}
       </body>
     </html>
