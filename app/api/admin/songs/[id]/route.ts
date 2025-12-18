@@ -47,11 +47,13 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const supabase = getSupabaseClient('service');
 
     // 先取当前歌曲及艺人信息
-    const { data: current, error: currentError } = await supabase
-      .from('songs')
-      .select('id, artist_id, slug, artist_name, track_title, artists (slug, name)')
-      .eq('id', params.id)
-      .single();
+  const { data: current, error: currentError } = await supabase
+    .from('songs')
+    .select(
+      'id, artist_id, slug, artist_name, track_title, cover_image_url, spotify_web_link, spotify_deep_link, meta_pixel_id, facebook_access_token, artists (slug, name)',
+    )
+    .eq('id', params.id)
+    .single();
 
     if (currentError || !current) {
       return NextResponse.json(
