@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "cf:build": "npx @cloudflare/next-on-pages@1.11.3 build",
+    "cf:build": "npx @cloudflare/next-on-pages@1.11.3",
     "start": "next start",
     "lint": "next lint",
     "postbuild": "rm -rf .next/cache"
