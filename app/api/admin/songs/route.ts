@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     }
 
     const payload: Partial<SongRow> = {
-      artist_id: null, // 通用入口未绑定艺人，保持兼容
+      artist_id: undefined, // 通用入口未绑定艺人
       slug,
       artist_name: artistName,
       track_title: trackTitle,
