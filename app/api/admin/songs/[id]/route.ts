@@ -87,7 +87,10 @@ export async function POST(request: Request, { params }: { params: { id: string 
       );
     }
 
-    const artistSlug = current.artists?.slug || current.slug.split('/')[0] || '';
+    const artistRel = Array.isArray((current as any).artists)
+      ? (current as any).artists[0]
+      : (current as any).artists;
+    const artistSlug = artistRel?.slug || current.slug.split('/')[0] || '';
     const songSlugPart = normalizeSlug(customSongSlug || buildSongSlug(trackTitle));
     const finalSlug = normalizeSlug(`${artistSlug}/${songSlugPart}`);
 
