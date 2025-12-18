@@ -15,12 +15,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "browser": {
-    "async_hooks": false
-  },
-  "exports": {
-    "./lib/async_hooks_stub": "./lib/async_hooks_stub.js"
-  },
   "dependencies": {
     "@supabase/supabase-js": "^2.88.0",
     "@types/node": "^24.10.1",

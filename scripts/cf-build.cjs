@@ -3,26 +3,57 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const CLI = 'npx @cloudflare/next-on-pages@1.11.3';
-const workerPath = path.join('.vercel', 'output', 'static', '_worker.js');
-const stubSrc = path.join('lib', 'async_hooks_stub.js');
-const stubDest = path.join('.vercel', 'output', 'static', 'async_hooks_stub.js');
+const VERCEL_BUILD = 'npx vercel@50.1.2 build --yes';
+const NEXT_ON_PAGES = 'npx @cloudflare/next-on-pages@1.11.3 --skip-build';
+const FUNCTIONS_DIR = path.join('.vercel', 'output', 'functions');
 
-function main() {
-  // 1) 先运行官方构建
-  execSync(CLI, { stdio: 'inherit' });
+function walk(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...walk(fullPath));
+    else files.push(fullPath);
+  }
+  return files;
+}
 
-  // 2) 如果产物存在，复制 stub 并替换引用
-  if (!fs.existsSync(workerPath)) {
-    console.error(`Missing worker file: ${workerPath}`);
+function patchAsyncHooksInVercelOutput() {
+  if (!fs.existsSync(FUNCTIONS_DIR)) {
+    console.error(`Missing Vercel functions dir: ${FUNCTIONS_DIR}`);
     process.exit(1);
   }
 
-  fs.copyFileSync(stubSrc, stubDest);
-  const original = fs.readFileSync(workerPath, 'utf8');
-  const patched = original.replace(/require\(["']async_hooks["']\)/g, 'require("./async_hooks_stub.js")');
-  fs.writeFileSync(workerPath, patched, 'utf8');
-  console.log('Patched async_hooks to stub in _worker.js');
+  let changedFiles = 0;
+  for (const file of walk(FUNCTIONS_DIR)) {
+    if (!/\.(cjs|mjs|js)$/.test(file)) continue;
+    const source = fs.readFileSync(file, 'utf8');
+    let patched = source.replace(
+      /require\((['"])async_hooks\1\)/g,
+      'require("node:async_hooks")',
+    );
+    patched = patched.replace(
+      /import\((['"])async_hooks\1\)/g,
+      'import("node:async_hooks")',
+    );
+    patched = patched.replace(/from\s+(['"])async_hooks\1/g, 'from "node:async_hooks"');
+    if (patched !== source) {
+      fs.writeFileSync(file, patched, 'utf8');
+      changedFiles += 1;
+    }
+  }
+  console.log(`Patched async_hooks -> node:async_hooks in ${changedFiles} files`);
+}
+
+function main() {
+  // 1) 生成 Vercel Build Output（.vercel/output）
+  execSync(VERCEL_BUILD, { stdio: 'inherit' });
+
+  // 2) 修补 Vercel 输出：将 async_hooks 改为 node:async_hooks，便于 next-on-pages 打包
+  patchAsyncHooksInVercelOutput();
+
+  // 3) 基于修补后的 Vercel 输出生成 Cloudflare Pages 产物（.vercel/output/static）
+  execSync(NEXT_ON_PAGES, { stdio: 'inherit' });
 }
 
 main();
