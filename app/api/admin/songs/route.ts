@@ -106,6 +106,7 @@ export async function POST(request: Request) {
     }
 
     const payload: Omit<SongRow, 'id'> = {
+      artist_id: artist.id,
       slug,
       artist_name: artistName,
       track_title: trackTitle,
