@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "cf:build": "npx @cloudflare/next-on-pages@1.11.3",
+    "cf:build": "node scripts/cf-build.cjs",
     "start": "next start",
     "lint": "next lint",
     "postbuild": "rm -rf .next/cache"
@@ -18,8 +18,10 @@
   "browser": {
     "async_hooks": false
   },
+  "exports": {
+    "./lib/async_hooks_stub": "./lib/async_hooks_stub.js"
+  },
   "dependencies": {
-    "async_hooks": "file:./lib/async_hooks_stub.js",
     "@supabase/supabase-js": "^2.88.0",
     "@types/node": "^24.10.1",
     "lucide-react": "^0.556.0",
