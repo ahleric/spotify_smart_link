@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
+import { createRequire } from 'module';
+const requireCjs = createRequire(import.meta.url);
+
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
@@ -7,9 +10,6 @@ const nextConfig = {
     serverComponentsExternalPackages: ['async_hooks'],
   },
   webpack: (config) => {
-    // ESM 下使用 createRequire 获取 CJS 工具
-    const { createRequire } = await import('module');
-    const requireCjs = createRequire(import.meta.url);
     // 将 async_hooks 指向浏览端 stub，避免 edge 打包缺失 Node 内置模块
     const asyncStub = requireCjs('path').resolve('./lib/async_hooks_stub.js');
     config.resolve.alias = {
