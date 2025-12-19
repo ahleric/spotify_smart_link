@@ -3,8 +3,9 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const VERCEL_BUILD = 'npx vercel@50.1.2 build --yes';
+const VERCEL_BUILD = 'npx vercel@50.1.2 build';
 const NEXT_ON_PAGES = 'npx @cloudflare/next-on-pages@1.11.3 --skip-build';
+const VERCEL_PROJECT_JSON = path.join('.vercel', 'project.json');
 const FUNCTIONS_DIR = path.join('.vercel', 'output', 'functions');
 
 function walk(dir) {
@@ -16,6 +17,35 @@ function walk(dir) {
     else files.push(fullPath);
   }
   return files;
+}
+
+function ensureVercelProjectSettings() {
+  if (fs.existsSync(VERCEL_PROJECT_JSON)) return;
+
+  fs.mkdirSync(path.dirname(VERCEL_PROJECT_JSON), { recursive: true });
+  fs.writeFileSync(
+    VERCEL_PROJECT_JSON,
+    JSON.stringify(
+      {
+        projectId: 'prj_0000000000000000000000000000',
+        orgId: 'team_000000000000000000000000',
+        projectName: 'landing-page-tool',
+        settings: {
+          createdAt: 0,
+          framework: 'nextjs',
+          devCommand: null,
+          installCommand: null,
+          buildCommand: null,
+          outputDirectory: null,
+          rootDirectory: null,
+          directoryListing: false,
+          nodeVersion: '22.x',
+        },
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 function patchAsyncHooksInVercelOutput() {
@@ -47,6 +77,7 @@ function patchAsyncHooksInVercelOutput() {
 
 function main() {
   // 1) 生成 Vercel Build Output（.vercel/output）
+  ensureVercelProjectSettings();
   execSync(VERCEL_BUILD, { stdio: 'inherit' });
 
   // 2) 修补 Vercel 输出：将 async_hooks 改为 node:async_hooks，便于 next-on-pages 打包
