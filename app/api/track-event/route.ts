@@ -13,12 +13,14 @@ export async function POST(request: Request) {
     testEventCode,
     metaPixelId,
     facebookAccessToken,
+    eventSourceUrl,
   } = (await request.json().catch(() => ({}))) as {
     eventName?: string;
     eventId?: string;
     testEventCode?: string;
     metaPixelId?: string;
     facebookAccessToken?: string;
+    eventSourceUrl?: string;
   };
 
   const headerList = headers();
@@ -26,9 +28,29 @@ export async function POST(request: Request) {
   const forwardedFor = headerList.get('x-forwarded-for');
   const cookie = headerList.get('cookie') ?? '';
   const fbp = cookie.match(/_fbp=([^;]+)/)?.[1];
+  const referer = headerList.get('referer') ?? '';
+
+  const extractFbclid = (value?: string | null) => {
+    if (!value) return null;
+    try {
+      return new URL(value).searchParams.get('fbclid');
+    } catch {
+      try {
+        return new URL(value, 'https://fallback.local').searchParams.get('fbclid');
+      } catch {
+        return null;
+      }
+    }
+  };
+
+  const cookieFbc = cookie.match(/_fbc=([^;]+)/)?.[1];
+  const cookieFbclid = cookie.match(/fbclid=([^;]+)/)?.[1];
+  const queryFbclid =
+    extractFbclid(eventSourceUrl) ?? extractFbclid(referer) ?? null;
+  const fbclid = cookieFbclid || queryFbclid;
   const fbc =
-    cookie.match(/_fbc=([^;]+)/)?.[1] ??
-    cookie.match(/fbclid=([^;]+)/)?.[1];
+    cookieFbc ??
+    (fbclid ? `fb.1.${Math.floor(Date.now() / 1000)}.${fbclid}` : undefined);
   const ip =
     forwardedFor?.split(',')[0]?.trim() ??
     headerList.get('x-real-ip') ??
@@ -59,7 +81,7 @@ export async function POST(request: Request) {
         event_name: eventName,
         event_time: Math.floor(Date.now() / 1000),
         action_source: 'website',
-        event_source_url: headerList.get('referer') ?? '',
+        event_source_url: eventSourceUrl || referer || '',
         event_id: eventId,
         user_data: {
           client_user_agent: userAgent,

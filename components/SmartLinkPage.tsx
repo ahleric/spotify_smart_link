@@ -44,6 +44,8 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     const payload = testEventCode
       ? { test_event_code: testEventCode }
       : {};
+    // 先触发标准 PageView，确保 _fbp 写入，提升匹配质量
+    window.fbq?.('track', 'PageView', undefined, { eventID: viewEventId });
     // 客户端自定义浏览事件
     window.fbq?.(
       'trackCustom',
@@ -58,6 +60,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       testEventCode,
       metaPixelId: pixelId,
       facebookAccessToken,
+      eventSourceUrl: typeof window !== 'undefined' ? window.location.href : '',
     });
     const sendView = () => {
       const ok =
@@ -94,6 +97,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       testEventCode,
       metaPixelId: pixelId,
       facebookAccessToken,
+      eventSourceUrl: typeof window !== 'undefined' ? window.location.href : '',
     });
 
     // 优先 sendBeacon，回落 fetch keepalive，避免跳转时丢包
