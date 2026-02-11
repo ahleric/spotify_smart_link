@@ -473,11 +473,11 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
   ]);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-start gap-6 px-5 pt-6 pb-32">
+    <main className="relative isolate flex min-h-screen flex-col items-center justify-start gap-6 px-5 pt-6 pb-32">
       {/* Pixel 初始化（优先使用每页配置，其次环境变量） */}
       <PixelBase pixelId={pixelId} />
       {/* 背景：轻量模糊封面 + 暗色渐变 */}
-      <div className="absolute inset-0 -z-10">
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <div
           className="absolute inset-0"
           style={{ backgroundColor: 'var(--bg-base)' }}
@@ -488,20 +488,21 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
           fill
           priority
           sizes="100vw"
-          className="object-cover blur-3xl brightness-[0.38] saturate-125 contrast-[1.08]"
+          className="object-cover scale-110 blur-2xl md:blur-3xl brightness-[0.58] md:brightness-[0.44] saturate-125 contrast-[1.08]"
         />
         <div
-          className="absolute inset-0 opacity-100"
+          className="absolute inset-0 opacity-[0.78] md:opacity-100"
           style={glowStyle}
         />
-        <div className="absolute inset-0" style={fadeStyle} />
+        <div className="absolute inset-0 opacity-[0.74] md:opacity-100" style={fadeStyle} />
         <div
-          className="absolute inset-0 opacity-[0.08] mix-blend-soft-light"
+          className="absolute inset-0 opacity-[0.06] md:opacity-[0.08] mix-blend-soft-light"
           style={grainStyle}
         />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.16),transparent_48%)] opacity-50 md:opacity-35" />
       </div>
 
-      <div className="flex w-full max-w-md flex-col items-center gap-5 mb-4">
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-5 mb-4">
         <div
           className={`relative w-full max-w-sm overflow-hidden rounded-[24px] shadow-[0_16px_36px_rgba(0,0,0,0.35)] transform-gpu transition duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none motion-reduce:opacity-100 ${
             mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -538,7 +539,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       <div
         className={`fixed bottom-6 left-4 right-4 mx-auto flex max-w-md flex-col items-center gap-3 rounded-3xl bg-white px-5 py-4 shadow-[0_12px_32px_rgba(0,0,0,0.25)] transform-gpu transition duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none motion-reduce:opacity-100 ${
           mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
+        } z-20`}
         style={{ transitionDelay: mounted ? '140ms' : '0ms' }}
       >
         <Image
