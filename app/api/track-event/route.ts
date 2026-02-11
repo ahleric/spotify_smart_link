@@ -14,6 +14,13 @@ type TrackEventBody = {
   facebookAccessToken?: string;
   eventSourceUrl?: string;
   attribution?: Record<string, unknown> | null;
+  context?: Record<string, unknown> | null;
+  route?: Record<string, unknown> | null;
+  identity?: {
+    anonymousId?: string;
+    sessionId?: string;
+  } | null;
+  forwardToFacebook?: boolean;
 };
 
 type ForwardStatus =
@@ -22,7 +29,8 @@ type ForwardStatus =
   | 'error'
   | 'skipped_missing_pixel'
   | 'skipped_missing_token'
-  | 'skipped_no_event_name';
+  | 'skipped_no_event_name'
+  | 'skipped_internal_only';
 
 const ATTR_QUERY_KEYS = [
   'utm_source',
@@ -106,6 +114,13 @@ function deriveRequestPath(eventSourceUrl: string, referer: string) {
   );
 }
 
+async function sha256Hex(value: string) {
+  const input = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', input);
+  const bytes = Array.from(new Uint8Array(digest));
+  return bytes.map((item) => item.toString(16).padStart(2, '0')).join('');
+}
+
 // CAPI 服务器端事件上报
 export async function POST(request: Request) {
   const {
@@ -116,6 +131,10 @@ export async function POST(request: Request) {
     facebookAccessToken,
     eventSourceUrl,
     attribution,
+    context,
+    route,
+    identity,
+    forwardToFacebook = true,
   } = (await request.json().catch(() => ({}))) as TrackEventBody;
 
   const headerList = headers();
@@ -145,6 +164,12 @@ export async function POST(request: Request) {
     fbclid,
   );
   const requestPath = deriveRequestPath(normalizedEventSourceUrl, referer);
+  const anonymousId = identity?.anonymousId?.trim() || '';
+  const sessionId = identity?.sessionId?.trim() || '';
+  const externalIdSeed = anonymousId || eventId || '';
+  const externalIdHash = externalIdSeed
+    ? await sha256Hex(externalIdSeed.toLowerCase())
+    : undefined;
   const supabase = getSupabaseClient('service');
   let eventLogId: number | null = null;
   let forwardStatus: ForwardStatus = 'queued';
@@ -174,6 +199,12 @@ export async function POST(request: Request) {
           testEventCode,
           metaPixelId,
           eventSourceUrl: normalizedEventSourceUrl,
+          context: context || null,
+          route: route || null,
+          identity: {
+            anonymousId: anonymousId || null,
+            sessionId: sessionId || null,
+          },
         },
       };
       const { data, error: insertError } = await supabase
@@ -221,6 +252,16 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!forwardToFacebook) {
+    forwardStatus = 'skipped_internal_only';
+    await updateEventLog(forwardStatus, null);
+    return NextResponse.json({
+      ok: true,
+      skipped: 'internal only',
+      eventLogId,
+    });
+  }
+
   const activePixelId = metaPixelId || pixelConfig.metaPixelId;
   const activeAccessToken = facebookAccessToken || pixelConfig.facebookAccessToken || process.env.FB_ACCESS_TOKEN;
 
@@ -258,7 +299,7 @@ export async function POST(request: Request) {
           client_ip_address: ip,
           fbp,
           fbc,
-          external_id: eventId,
+          external_id: externalIdHash,
         },
       },
     ],

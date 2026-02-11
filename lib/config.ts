@@ -1,3 +1,15 @@
+export type RoutingConfig = {
+  deepLinkDelayMs?: number;
+  fallbackDelayMs?: number;
+  inAppFallbackExtraMs?: number;
+  successSignalWindowMs?: number;
+  preferWebOnDesktop?: boolean;
+};
+
+export type TrackingConfig = {
+  qualifiedCooldownMs?: number;
+};
+
 export type ReleaseData = {
   artistName: string;
   trackTitle: string;
@@ -6,6 +18,8 @@ export type ReleaseData = {
   spotifyWebLink: string;
   metaPixelId?: string;
   facebookAccessToken?: string;
+  routingConfig?: RoutingConfig | null;
+  trackingConfig?: TrackingConfig | null;
 };
 
 // 静态默认值（仅用于根路径示例页），真实页面数据来自 Supabase。
@@ -17,6 +31,8 @@ export const fallbackReleaseData: ReleaseData = {
   spotifyWebLink: 'https://open.spotify.com/track/0dOp6hAL0Vf6lYk9UU3Uhn?si=fc784f6962fc424a',
   metaPixelId: '',
   facebookAccessToken: '',
+  routingConfig: null,
+  trackingConfig: null,
 };
 
 // Pixel & CAPI 配置（从环境变量读取）。

@@ -78,6 +78,6 @@ comment on table public.landing_page_events is
   'Raw landing-page event log for first-party attribution and platform-forwarding diagnostics.';
 
 comment on column public.landing_page_events.facebook_forward_status is
-  'Meta forward result: ok | error | skipped_missing_pixel | skipped_missing_token | skipped_no_event_name.';
+  'Meta forward result: ok | error | skipped_missing_pixel | skipped_missing_token | skipped_no_event_name | skipped_internal_only.';
 
 commit;

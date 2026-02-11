@@ -16,8 +16,9 @@ Apply analytics upgrades without breaking existing landing pages or active ad tr
 
 ## Apply order
 1. Run migration: `supabase/migrations/20260211_safe_analytics_upgrade.sql`
-2. Deploy app code (includes dual-write in `/api/track-event`)
-3. Verify with SQL checks below
+2. Run migration: `supabase/migrations/20260211_audience_views.sql`
+3. Deploy app code (includes dual-write in `/api/track-event` and smart routing events)
+4. Verify with SQL checks below
 
 ## Verification checks
 ```sql
@@ -38,8 +39,20 @@ from public.landing_page_events
 where created_at > now() - interval '30 minutes'
 group by event_name
 order by count(*) desc;
+
+-- campaign metrics view works
+select *
+from public.landing_page_campaign_metrics_30d
+order by qualified_count desc nulls last
+limit 20;
+
+-- high intent audience candidates are generated
+select *
+from public.landing_page_high_intent_audience_30d
+order by last_seen_at desc
+limit 20;
 ```
 
 ## Rollback
-If needed, run: `supabase/migrations/20260211_safe_analytics_upgrade.rollback.sql`
-
+1. `supabase/migrations/20260211_audience_views.rollback.sql`
+2. `supabase/migrations/20260211_safe_analytics_upgrade.rollback.sql`
