@@ -4,7 +4,6 @@ import {
   ANALYTICS_EVENTS,
   applyScopeToQuery,
   isScopeReady,
-  maxIso,
   normalizeScope,
   resolveRange,
 } from '@/lib/analytics';
@@ -37,25 +36,6 @@ async function countEvent(params: {
   return count || 0;
 }
 
-async function firstEventAt(params: {
-  eventName: string;
-  scope: ReturnType<typeof normalizeScope>;
-}) {
-  const supabase = getSupabaseClient('service');
-  let query = supabase
-    .from('landing_page_events')
-    .select('created_at')
-    .eq('event_name', params.eventName)
-    .order('created_at', { ascending: true })
-    .limit(1);
-  query = applyScopeToQuery(query, params.scope);
-  const { data, error } = await query;
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data?.[0]?.created_at || null;
-}
-
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
@@ -77,8 +57,6 @@ export async function GET(request: Request) {
       openSuccessCount,
       qualifiedCount,
       openFallbackCount,
-      openSuccessStart,
-      qualifiedStart,
     ] = await Promise.all([
       countEvent({
         eventName: ANALYTICS_EVENTS.view,
@@ -110,43 +88,6 @@ export async function GET(request: Request) {
         endIso: range.endIso,
         scope,
       }),
-      firstEventAt({ eventName: ANALYTICS_EVENTS.openSuccess, scope }),
-      firstEventAt({ eventName: ANALYTICS_EVENTS.qualified, scope }),
-    ]);
-
-    const openSuccessRateStart = maxIso(range.startIso, openSuccessStart);
-    const qualifiedRateStart = maxIso(range.startIso, qualifiedStart);
-
-    const [
-      clickForOpenRate,
-      clickForQualifiedRate,
-      openSuccessForRate,
-      qualifiedForRate,
-    ] = await Promise.all([
-      countEvent({
-        eventName: ANALYTICS_EVENTS.click,
-        startIso: openSuccessRateStart,
-        endIso: range.endIso,
-        scope,
-      }),
-      countEvent({
-        eventName: ANALYTICS_EVENTS.click,
-        startIso: qualifiedRateStart,
-        endIso: range.endIso,
-        scope,
-      }),
-      countEvent({
-        eventName: ANALYTICS_EVENTS.openSuccess,
-        startIso: openSuccessRateStart,
-        endIso: range.endIso,
-        scope,
-      }),
-      countEvent({
-        eventName: ANALYTICS_EVENTS.qualified,
-        startIso: qualifiedRateStart,
-        endIso: range.endIso,
-        scope,
-      }),
     ]);
 
     return NextResponse.json({
@@ -162,16 +103,16 @@ export async function GET(request: Request) {
       },
       rates: {
         clickRatePct: toRate(clickCount, viewCount),
-        openSuccessRatePct: toRate(openSuccessForRate, clickForOpenRate),
-        qualifiedRatePct: toRate(qualifiedForRate, clickForQualifiedRate),
+        openSuccessRatePct: toRate(openSuccessCount, clickCount),
+        qualifiedRatePct: toRate(qualifiedCount, clickCount),
       },
       windows: {
-        openSuccessRateStart,
-        qualifiedRateStart,
+        openSuccessRateStart: range.startIso,
+        qualifiedRateStart: range.startIso,
       },
       notes: {
-        openSuccessRate: 'OpenSuccess rate uses post-event-start window to avoid historical dilution.',
-        qualifiedRate: 'Qualified rate uses post-event-start window to avoid historical dilution.',
+        openSuccessRate: 'OpenSuccess rate is calculated directly within the selected range.',
+        qualifiedRate: 'Qualified rate is calculated directly within the selected range.',
       },
     });
   } catch (error: any) {

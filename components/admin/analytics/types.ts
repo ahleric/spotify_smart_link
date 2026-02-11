@@ -57,6 +57,8 @@ export type CampaignsResponse = {
     utmMedium: string;
     adSetId: string;
     adId: string;
+    adSetName: string;
+    adName: string;
     view: number;
     click: number;
     openSuccess: number;

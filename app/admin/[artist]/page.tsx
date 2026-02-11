@@ -1,8 +1,10 @@
 'use client';
 export const runtime = 'edge';
 
+import type { Route } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { BarChart3, ExternalLink, Link2, Plus, SquarePen } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { ArtistRow, SongRow } from '@/lib/types';
@@ -51,11 +53,7 @@ export default function ArtistDetailPage() {
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (artist?.name) {
-      document.title = `管理后台 - 艺人：${artist.name}`;
-    } else {
-      document.title = '管理后台 - 艺人';
-    }
+    document.title = artist?.name ? `管理后台 - ${artist.name}` : '管理后台 - 艺人';
   }, [artist?.name]);
 
   const buildLink = (slug: string) => {
@@ -75,150 +73,121 @@ export default function ArtistDetailPage() {
   };
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-slate-950 text-white">
-        <div className="mx-auto w-full max-w-5xl px-6 py-10">加载中...</div>
-      </main>
-    );
+    return <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6 text-white/75">加载中...</div>;
   }
 
   if (!artist) {
-    return (
-      <main className="min-h-screen bg-slate-950 text-white">
-        <div className="mx-auto w-full max-w-5xl px-6 py-10">未找到艺人</div>
-      </main>
-    );
+    return <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6 text-white/75">未找到艺人</div>;
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
-        <header className="flex items-start justify-between gap-4">
+    <div className="space-y-5">
+      <header className="rounded-2xl border border-white/10 bg-slate-900/75 p-5 ring-1 ring-white/5 md:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-slate-800">
+            <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-white/15 bg-slate-800">
               {artist.photo_url ? (
-                <Image
-                  src={artist.photo_url}
-                  alt={artist.name}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
+                <Image src={artist.photo_url} alt={artist.name} fill sizes="80px" className="object-cover" />
               ) : null}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-widest text-emerald-400">Artist Profile</p>
-              <h1 className="text-3xl font-bold">{artist.name}</h1>
-              <p className="text-sm text-white/70 truncate">/{artist.slug}</p>
-              <p className="text-xs text-emerald-300">
-                Pixel：{artist.meta_pixel_id || '（未填）'} · CAPI：{artist.facebook_access_token ? '已配置' : '（未填）'}
+              <p className="text-xs tracking-[0.15em] text-emerald-300">艺人落地页管理</p>
+              <h1 className="text-2xl font-semibold text-white md:text-3xl">{artist.name}</h1>
+              <p className="text-sm text-white/65">/{artist.slug}</p>
+              <p className="mt-1 text-sm text-white/68">
+                Pixel：{artist.meta_pixel_id || '未填'} · CAPI：{artist.facebook_access_token ? '已配置' : '未填'}
               </p>
-              {error && <p className="text-sm text-rose-400">错误：{error}</p>}
+              {error ? <p className="mt-2 text-sm text-rose-400">错误：{error}</p> : null}
             </div>
           </div>
-          <Link
-            href="/admin"
-            className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-emerald-500/20"
-          >
-            返回艺人列表
-          </Link>
-        </header>
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">落地页</h2>
-          <Link
-            href={`/admin/${artist.slug}/new`}
-            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 shadow-[0_10px_30px_rgba(16,185,129,0.35)] transition hover:translate-y-px"
-          >
-            创建新落地页
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/admin/analytics/${artist.slug}` as Route}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              <BarChart3 className="h-4 w-4" />
+              查看仪表盘
+            </Link>
+            <Link
+              href={`/admin/${artist.slug}/new` as Route}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-sm font-semibold text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.3)] transition hover:brightness-105"
+            >
+              <Plus className="h-4 w-4" />
+              新建落地页
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <section className="rounded-2xl border border-white/10 bg-slate-900/75 p-4 ring-1 ring-white/5 md:p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">该艺人的歌曲落地页</h2>
+          <span className="rounded-lg border border-white/15 bg-white/5 px-2 py-1 text-sm text-white/80">
+            {songs.length} 首
+          </span>
         </div>
 
-        <section className="rounded-2xl bg-slate-900/80 p-6 ring-1 ring-white/5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {songs.length === 0 && (
-              <p className="text-sm text-white/60">暂无数据，点击右上角创建新落地页。</p>
-            )}
-            {songs.map((song) => (
-              <div
-                key={song.id}
-                className="flex gap-3 rounded-xl border border-white/5 bg-slate-800/80 p-4 text-sm transition hover:border-emerald-400/60"
-              >
-                <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-slate-700">
-                  {song.cover_image_url ? (
-                    <Image
-                      src={song.cover_image_url}
-                      alt={song.track_title}
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
-                  ) : null}
-                </div>
-                <div className="flex flex-1 flex-col gap-2">
-                  <div>
-                    <p className="text-base font-semibold text-white">{song.track_title}</p>
-                    <p className="text-xs uppercase tracking-wide text-emerald-300">
-                      {song.artist_name}
-                    </p>
-                  </div>
-                  <div className="text-[11px] text-white/70">
-                    <span className="block truncate">{song.slug || '无 slug'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyLink(song.slug)}
-                      className={`rounded px-2 py-0.5 text-[10px] transition ${
-                        copiedSlug === song.slug
-                          ? 'bg-emerald-500 text-slate-900'
-                          : 'bg-white/10 text-emerald-300 hover:bg-emerald-500/20'
-                      }`}
-                    >
-                      {copiedSlug === song.slug ? '√ 已复制' : '复制链接'}
-                    </button>
-                    <Link
-                      href={`/admin/${artist.slug}/songs/${song.id}`}
-                      className="rounded px-2 py-0.5 text-[10px] text-white transition bg-white/10 hover:bg-emerald-500/20"
-                    >
-                      编辑
-                    </Link>
-                    <a
-                      href={`/${song.slug.replace(/^\/+/, '')}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-center rounded bg-white/10 px-2 py-0.5 text-[12px] text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-900"
-                      title="打开落地页"
-                      aria-label="打开落地页"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
-                      >
-                        <path d="M15 3h6v6" />
-                        <path d="M10 14 21 3" />
-                        <path d="M21 14v7H3V3h7" />
-                      </svg>
-                    </a>
-                  </div>
-                  <p className="text-[11px] text-emerald-300">
-                    Pixel：{song.meta_pixel_id || '（继承艺人或默认）'}
-                  </p>
-                  <p className="text-[11px] text-white/50">
-                    CAPI Token：{song.facebook_access_token ? '已配置' : '（继承艺人或默认）'}
-                  </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          {songs.length === 0 ? (
+            <p className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm text-white/62">
+              暂无落地页，点击右上角“新建落地页”。
+            </p>
+          ) : null}
+
+          {songs.map((song) => (
+            <div
+              key={song.id}
+              className="group flex gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-emerald-400/55 hover:bg-white/[0.05]"
+            >
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/15 bg-slate-800">
+                {song.cover_image_url ? (
+                  <Image src={song.cover_image_url} alt={song.track_title} fill sizes="64px" className="object-cover" />
+                ) : null}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold text-white">{song.track_title}</p>
+                <p className="truncate text-sm text-white/62">/{song.slug}</p>
+
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyLink(song.slug)}
+                    className={`inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold transition ${
+                      copiedSlug === song.slug
+                        ? 'bg-emerald-500 text-slate-950'
+                        : 'border border-white/15 bg-white/5 text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    {copiedSlug === song.slug ? '已复制' : '复制链接'}
+                  </button>
+
+                  <Link
+                    href={`/admin/${artist.slug}/songs/${song.id}` as Route}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 text-xs font-semibold text-white transition hover:bg-white/10"
+                  >
+                    <SquarePen className="h-3.5 w-3.5" />
+                    编辑
+                  </Link>
+
+                  <a
+                    href={`/${song.slug.replace(/^\/+/, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-emerald-400/35 bg-emerald-500/15 px-2.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/28"
+                    aria-label="打开落地页"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    打开
+                  </a>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </main>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

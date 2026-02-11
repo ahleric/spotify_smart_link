@@ -5,7 +5,6 @@ import {
   applyScopeToQuery,
   enumerateDays,
   isScopeReady,
-  maxIso,
   normalizeScope,
   resolveRange,
   toDayKey,
@@ -16,23 +15,6 @@ export const runtime = 'edge';
 function toRate(numerator: number, denominator: number) {
   if (!denominator) return 0;
   return Number(((numerator / denominator) * 100).toFixed(2));
-}
-
-async function firstEventAt(params: {
-  eventName: string;
-  scope: ReturnType<typeof normalizeScope>;
-}) {
-  const supabase = getSupabaseClient('service');
-  let query = supabase
-    .from('landing_page_events')
-    .select('created_at')
-    .eq('event_name', params.eventName)
-    .order('created_at', { ascending: true })
-    .limit(1);
-  query = applyScopeToQuery(query, params.scope);
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
-  return data?.[0]?.created_at || null;
 }
 
 export async function GET(request: Request) {
@@ -74,14 +56,6 @@ export async function GET(request: Request) {
       throw new Error(error.message);
     }
 
-    const [openSuccessStart, qualifiedStart] = await Promise.all([
-      firstEventAt({ eventName: ANALYTICS_EVENTS.openSuccess, scope }),
-      firstEventAt({ eventName: ANALYTICS_EVENTS.qualified, scope }),
-    ]);
-
-    const openSuccessRateStart = maxIso(range.startIso, openSuccessStart);
-    const qualifiedRateStart = maxIso(range.startIso, qualifiedStart);
-
     const dayMap = new Map<string, {
       day: string;
       view: number;
@@ -115,14 +89,11 @@ export async function GET(request: Request) {
     }
 
     const series = Array.from(dayMap.values()).map((item) => {
-      const dayStartIso = `${item.day}T00:00:00.000Z`;
-      const openRateEnabled = new Date(dayStartIso).getTime() >= new Date(openSuccessRateStart).getTime();
-      const qualifiedRateEnabled = new Date(dayStartIso).getTime() >= new Date(qualifiedRateStart).getTime();
       return {
         ...item,
         clickRatePct: toRate(item.click, item.view),
-        openSuccessRatePct: openRateEnabled ? toRate(item.openSuccess, item.click) : null,
-        qualifiedRatePct: qualifiedRateEnabled ? toRate(item.qualified, item.click) : null,
+        openSuccessRatePct: toRate(item.openSuccess, item.click),
+        qualifiedRatePct: toRate(item.qualified, item.click),
       };
     });
 
@@ -131,8 +102,8 @@ export async function GET(request: Request) {
       scope,
       range,
       windows: {
-        openSuccessRateStart,
-        qualifiedRateStart,
+        openSuccessRateStart: range.startIso,
+        qualifiedRateStart: range.startIso,
       },
       series,
     });

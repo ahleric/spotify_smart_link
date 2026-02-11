@@ -1,10 +1,11 @@
 'use client';
 
-import Link from 'next/link';
+import { CalendarRange, Disc3, Info, SlidersHorizontal, UserRound } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import KpiCards from '@/components/admin/analytics/KpiCards';
-import FunnelCard from '@/components/admin/analytics/FunnelCard';
 import TrendChart from '@/components/admin/analytics/TrendChart';
+import QualifiedRateChart from '@/components/admin/analytics/QualifiedRateChart';
 import CampaignTable from '@/components/admin/analytics/CampaignTable';
 import RouteHealthTable from '@/components/admin/analytics/RouteHealthTable';
 import HighIntentTable from '@/components/admin/analytics/HighIntentTable';
@@ -68,9 +69,8 @@ function fetchJson<T>(url: string): Promise<T> {
   });
 }
 
-function parseInitialFiltersFromUrl(): Partial<Filters> {
-  if (typeof window === 'undefined') return {};
-  const params = new URLSearchParams(window.location.search);
+function parseFiltersFromSearch(search: string): Partial<Filters> {
+  const params = new URLSearchParams(search);
   const modeRaw = (params.get('mode') || '').trim();
   const rangeRaw = (params.get('range') || '').trim();
 
@@ -97,6 +97,15 @@ function parseInitialFiltersFromUrl(): Partial<Filters> {
   };
 }
 
+function areFiltersEqual(left: Filters, right: Filters) {
+  return left.mode === right.mode
+    && left.artistSlug === right.artistSlug
+    && left.songSlug === right.songSlug
+    && left.rangePreset === right.rangePreset
+    && left.startDate === right.startDate
+    && left.endDate === right.endDate;
+}
+
 function buildQueryString(filters: Filters) {
   const params = new URLSearchParams();
   params.set('mode', filters.mode);
@@ -120,6 +129,9 @@ function getCustomRangeError(filters: Filters) {
 }
 
 export default function AnalyticsDashboardPage() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchSnapshot = searchParams.toString();
   const [artists, setArtists] = useState<ArtistOption[]>([]);
   const [songs, setSongs] = useState<SongOption[]>([]);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -127,6 +139,7 @@ export default function AnalyticsDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [urlSynced, setUrlSynced] = useState(false);
 
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [timeseries, setTimeseries] = useState<TimeseriesResponse | null>(null);
@@ -140,9 +153,16 @@ export default function AnalyticsDashboardPage() {
     if (typeof document !== 'undefined') {
       document.title = '管理后台 - 数据仪表盘';
     }
-    const initial = parseInitialFiltersFromUrl();
-    setFilters((prev) => ({ ...prev, ...initial }));
   }, []);
+
+  useEffect(() => {
+    const parsed = parseFiltersFromSearch(searchSnapshot);
+    setFilters((prev) => {
+      const next = { ...prev, ...parsed };
+      return areFiltersEqual(prev, next) ? prev : next;
+    });
+    setUrlSynced(true);
+  }, [pathname, searchSnapshot]);
 
   useEffect(() => {
     fetchJson<{ ok: boolean; data: ArtistOption[] }>('/api/admin/artists')
@@ -189,11 +209,12 @@ export default function AnalyticsDashboardPage() {
   }, [filters.artistSlug]);
 
   useEffect(() => {
+    if (!urlSynced) return;
     if (typeof window === 'undefined') return;
     const query = buildQueryString(filters);
     const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
     window.history.replaceState({}, '', nextUrl);
-  }, [filters]);
+  }, [filters, urlSynced]);
 
   useEffect(() => {
     const customRangeError = getCustomRangeError(filters);
@@ -236,7 +257,6 @@ export default function AnalyticsDashboardPage() {
 
   const selectedArtist = artists.find((item) => item.slug === filters.artistSlug);
   const selectedSong = songs.find((song) => song.slug === filters.songSlug);
-
   const currentArtistImage = selectedArtist?.photo_url || selectedSong?.cover_image_url || '';
   const currentArtistName = selectedArtist?.name || '未选择艺人';
 
@@ -245,164 +265,147 @@ export default function AnalyticsDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.16),_rgba(2,6,23,1)_44%),linear-gradient(180deg,_#020617_0%,_#020617_100%)] text-white">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-5 md:px-6 md:py-7">
-        <header className="rounded-xl border border-white/10 bg-slate-900/70 p-4 backdrop-blur md:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-emerald-300">数据仪表盘</p>
-              <h1 className="mt-1 text-xl font-bold md:text-2xl">艺人/歌曲投放看板</h1>
-              {error ? <p className="mt-2 text-sm text-rose-400">错误：{error}</p> : null}
-              {validationError ? <p className="mt-2 text-sm text-amber-300">提示：{validationError}</p> : null}
+    <div className="space-y-3">
+      {error ? (
+        <p className="inline-flex items-center gap-2 rounded-lg border border-rose-400/35 bg-rose-500/10 px-3 py-1.5 text-sm text-rose-300">
+          <Info className="h-4 w-4" />
+          {error}
+        </p>
+      ) : null}
+      {validationError ? (
+        <p className="inline-flex items-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-1.5 text-sm text-amber-200">
+          <Info className="h-4 w-4" />
+          {validationError}
+        </p>
+      ) : null}
+
+      <section className="rounded-2xl border border-white/10 bg-slate-900/75 p-3 ring-1 ring-white/5 md:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-sm font-medium text-white/80">
+              <SlidersHorizontal className="h-4 w-4 text-emerald-300" />
+              查看维度
+            </span>
+            <div className="inline-flex rounded-xl border border-white/10 bg-slate-950/70 p-1">
+              <button
+                type="button"
+                onClick={() => updateFilters({ mode: 'artist' })}
+                className={`min-h-8 rounded-lg px-3 text-sm font-semibold transition ${
+                  filters.mode === 'artist'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'text-white/75 hover:text-white'
+                }`}
+              >
+                按艺人
+              </button>
+              <button
+                type="button"
+                onClick={() => updateFilters({ mode: 'song' })}
+                className={`min-h-8 rounded-lg px-3 text-sm font-semibold transition ${
+                  filters.mode === 'song'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'text-white/75 hover:text-white'
+                }`}
+              >
+                按歌曲
+              </button>
             </div>
-            <Link
-              href="/admin"
-              className="inline-flex min-h-10 items-center rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-500/20"
-            >
-              返回管理后台
-            </Link>
-          </div>
-        </header>
-
-        <section className="rounded-xl border border-white/10 bg-slate-900/75 p-3 ring-1 ring-white/5 md:p-4">
-          <div className="grid gap-3 xl:grid-cols-[1fr_220px]">
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-white/80">查看维度</p>
-                <div className="inline-flex rounded-lg border border-white/10 bg-slate-950/70 p-1">
-                  <button
-                    type="button"
-                    onClick={() => updateFilters({ mode: 'artist' })}
-                    className={`min-h-9 rounded-md px-3 text-sm font-medium transition ${
-                      filters.mode === 'artist'
-                        ? 'bg-emerald-500 text-slate-950'
-                        : 'text-white/75 hover:text-white'
-                    }`}
-                  >
-                    按艺人
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateFilters({ mode: 'song' })}
-                    className={`min-h-9 rounded-md px-3 text-sm font-medium transition ${
-                      filters.mode === 'song'
-                        ? 'bg-emerald-500 text-slate-950'
-                        : 'text-white/75 hover:text-white'
-                    }`}
-                  >
-                    按歌曲
-                  </button>
-                </div>
-              </div>
-
-              <div className={`grid gap-3 ${filters.mode === 'song' ? 'md:grid-cols-2' : 'md:grid-cols-1'}`}>
-                <label className="space-y-1">
-                  <span className="text-sm text-white/80">艺人</span>
-                  <select
-                    value={filters.artistSlug}
-                    onChange={(e) => updateFilters({ artistSlug: e.target.value })}
-                    className="min-h-10 w-full rounded-lg border border-white/10 bg-slate-800 px-3 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/50"
-                  >
-                    {artists.map((artist) => (
-                      <option key={artist.id} value={artist.slug}>{artist.name}</option>
-                    ))}
-                  </select>
-                </label>
-
-                {filters.mode === 'song' ? (
-                  <label className="space-y-1">
-                    <span className="text-sm text-white/80">歌曲</span>
-                    <select
-                      value={filters.songSlug}
-                      onChange={(e) => updateFilters({ songSlug: e.target.value })}
-                      className="min-h-10 w-full rounded-lg border border-white/10 bg-slate-800 px-3 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/50"
-                    >
-                      {songs.map((song) => (
-                        <option key={song.id} value={song.slug}>{song.track_title}</option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-white/80">时间范围</p>
-                <div className="flex flex-wrap gap-2">
-                  {RANGE_OPTIONS.map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => updateFilters({ rangePreset: item.value })}
-                      className={`min-h-9 rounded-lg border px-3 text-sm transition ${
-                        filters.rangePreset === item.value
-                          ? 'border-emerald-400 bg-emerald-500/20 text-emerald-200'
-                          : 'border-white/10 bg-white/5 text-white/75 hover:border-white/20 hover:text-white'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
+            {filters.mode === 'song' ? (
+              <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-800/70 px-2.5 py-1.5">
+                <Disc3 className="h-4 w-4 text-emerald-300" />
+                <select
+                  value={filters.songSlug}
+                  onChange={(e) => updateFilters({ songSlug: e.target.value })}
+                  className="min-h-8 min-w-[180px] bg-transparent text-sm text-white outline-none"
+                >
+                  {songs.map((song) => (
+                    <option key={song.id} value={song.slug}>{song.track_title}</option>
                   ))}
-                </div>
-              </div>
+                </select>
+              </label>
+            ) : null}
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/78">
+            {summary?.range ? `${summary.range.startDate} → ${summary.range.endDate}` : '时间范围'}
+          </div>
+        </div>
 
-              {filters.rangePreset === 'custom' ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  <label className="space-y-1">
-                    <span className="text-sm text-white/80">起始日期</span>
-                    <input
-                      type="date"
-                      value={filters.startDate}
-                      onChange={(e) => updateFilters({ startDate: e.target.value })}
-                      className="min-h-10 w-full rounded-lg border border-white/10 bg-slate-800 px-3 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/50"
-                    />
-                  </label>
-                  <label className="space-y-1">
-                    <span className="text-sm text-white/80">结束日期</span>
-                    <input
-                      type="date"
-                      value={filters.endDate}
-                      onChange={(e) => updateFilters({ endDate: e.target.value })}
-                      className="min-h-10 w-full rounded-lg border border-white/10 bg-slate-800 px-3 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/50"
-                    />
-                  </label>
+        <div className="mt-2.5 flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-white/82">
+              <CalendarRange className="h-4 w-4 text-emerald-300" />
+              时间范围
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {RANGE_OPTIONS.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => updateFilters({ rangePreset: item.value })}
+                  className={`min-h-9 rounded-xl border px-3 text-sm font-medium transition ${
+                    filters.rangePreset === item.value
+                      ? 'border-emerald-400 bg-emerald-500/18 text-emerald-100'
+                      : 'border-white/10 bg-white/5 text-white/78 hover:border-white/20 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            {filters.rangePreset === 'custom' ? (
+              <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
+                <label className="space-y-1">
+                  <span className="text-sm text-white/80">起始日期</span>
+                  <input
+                    type="date"
+                    value={filters.startDate}
+                    onChange={(e) => updateFilters({ startDate: e.target.value })}
+                    className="min-h-10 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/35"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm text-white/80">结束日期</span>
+                  <input
+                    type="date"
+                    value={filters.endDate}
+                    onChange={(e) => updateFilters({ endDate: e.target.value })}
+                    className="min-h-10 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/35"
+                  />
+                </label>
+              </div>
+            ) : null}
+          </div>
+
+          <aside className="w-[128px] shrink-0 rounded-xl border border-emerald-400/35 bg-emerald-500/10 p-2">
+            <div
+              className="h-20 w-full overflow-hidden rounded-lg border border-white/20 bg-slate-700 bg-cover bg-center"
+              style={currentArtistImage ? { backgroundImage: `url(${currentArtistImage})` } : undefined}
+            >
+              {!currentArtistImage ? (
+                <div className="flex h-full w-full items-center justify-center text-white/60">
+                  <UserRound className="h-5 w-5" />
                 </div>
               ) : null}
             </div>
-
-            <aside className="rounded-lg border border-emerald-400/35 bg-emerald-500/10 p-2.5">
-              <div className="overflow-hidden rounded-md border border-white/20 bg-slate-800 shadow-[0_8px_20px_rgba(0,0,0,0.32)]">
-                <div
-                  className="aspect-square w-full bg-slate-700 bg-cover bg-center"
-                  style={currentArtistImage ? { backgroundImage: `url(${currentArtistImage})` } : undefined}
-                >
-                  {!currentArtistImage ? (
-                    <div className="flex h-full w-full items-center justify-center text-sm text-white/55">暂无头像</div>
-                  ) : null}
-                </div>
-              </div>
-              <p className="mt-2 truncate text-base font-semibold text-white">{currentArtistName}</p>
-            </aside>
-          </div>
-        </section>
-
-        <KpiCards summary={summary} loading={loading} />
-
-        <div className="grid gap-4 xl:grid-cols-3">
-          <div className="xl:col-span-2">
-            <TrendChart data={timeseries} loading={loading} />
-          </div>
-          <div>
-            <FunnelCard summary={summary} loading={loading} />
-          </div>
+            <p className="mt-1.5 truncate text-sm font-semibold text-white">{currentArtistName}</p>
+          </aside>
         </div>
+      </section>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <CampaignTable data={campaigns} loading={loading} />
-          <RouteHealthTable data={routeHealth} loading={loading} />
-        </div>
+      <KpiCards summary={summary} loading={loading} />
 
-        <HighIntentTable data={highIntent} loading={loading} />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <TrendChart data={timeseries} loading={loading} />
+        <QualifiedRateChart data={timeseries} loading={loading} />
       </div>
-    </main>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <CampaignTable data={campaigns} loading={loading} />
+        <RouteHealthTable data={routeHealth} loading={loading} />
+      </div>
+
+      <HighIntentTable data={highIntent} loading={loading} />
+    </div>
   );
 }

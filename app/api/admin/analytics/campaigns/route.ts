@@ -16,6 +16,8 @@ type CampaignBucket = {
   utmMedium: string;
   adSetId: string;
   adId: string;
+  adSetName: string;
+  adName: string;
   view: number;
   click: number;
   openSuccess: number;
@@ -28,6 +30,21 @@ function toRate(numerator: number, denominator: number) {
   return Number(((numerator / denominator) * 100).toFixed(2));
 }
 
+function pickFirstString(
+  source: any,
+  keys: string[],
+) {
+  for (const key of keys) {
+    const value = String(source?.[key] || '').trim();
+    if (value) return value;
+  }
+  return '';
+}
+
+function looksLikeMetaId(value: string) {
+  return /^\d{8,24}$/.test(value.trim());
+}
+
 function getAdSetId(attr: any) {
   return (attr?.adset_id || attr?.utm_term || '').trim() || 'unknown';
 }
@@ -36,10 +53,98 @@ function getAdId(attr: any) {
   return (attr?.ad_id || attr?.utm_content || '').trim() || 'unknown';
 }
 
+function getAdSetName(attr: any) {
+  const explicit = pickFirstString(attr, [
+    'adset_name',
+    'ad_set_name',
+    'utm_adset_name',
+    'utm_adset',
+    'adset',
+    'ad_set',
+  ]);
+  if (explicit) return explicit.slice(0, 180);
+
+  const term = String(attr?.utm_term || '').trim();
+  if (term && !looksLikeMetaId(term)) return term.slice(0, 180);
+  return '';
+}
+
+function getAdName(attr: any) {
+  const explicit = pickFirstString(attr, [
+    'ad_name',
+    'utm_ad_name',
+    'utm_ad',
+    'ad',
+  ]);
+  if (explicit) return explicit.slice(0, 180);
+
+  const content = String(attr?.utm_content || '').trim();
+  if (content && !looksLikeMetaId(content)) return content.slice(0, 180);
+  return '';
+}
+
 function getCampaignKey(attr: any) {
   const adSetId = getAdSetId(attr);
   const adId = getAdId(attr);
   return `${adSetId}::${adId}`;
+}
+
+async function resolveAdsReadToken(_scope: ReturnType<typeof normalizeScope>) {
+  const envToken =
+    process.env.META_ADS_READ_TOKEN ||
+    process.env.META_ADS_ACCESS_TOKEN ||
+    process.env.FB_ADS_READ_TOKEN ||
+    '';
+  return envToken;
+}
+
+async function fetchMetaObjectName(id: string, token: string) {
+  const endpoint = `https://graph.facebook.com/v22.0/${encodeURIComponent(id)}?fields=name&access_token=${encodeURIComponent(token)}`;
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), 1200);
+  try {
+    const response = await fetch(endpoint, { method: 'GET', signal: abortController.signal });
+    if (!response.ok) return '';
+    const payload = await response.json().catch(() => null);
+    return String(payload?.name || '').trim().slice(0, 180);
+  } catch {
+    return '';
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function enrichNamesFromMetaApi<T extends {
+  adSetId: string;
+  adId: string;
+  adSetName: string;
+  adName: string;
+}>(
+  rows: T[],
+  token: string,
+) {
+  if (!token) return rows;
+
+  const adSetIds = Array.from(new Set(rows
+    .filter((row) => !row.adSetName && looksLikeMetaId(row.adSetId))
+    .map((row) => row.adSetId))).slice(0, 20);
+  const adIds = Array.from(new Set(rows
+    .filter((row) => !row.adName && looksLikeMetaId(row.adId))
+    .map((row) => row.adId))).slice(0, 20);
+
+  const [adSetEntries, adEntries] = await Promise.all([
+    Promise.all(adSetIds.map(async (id) => [id, await fetchMetaObjectName(id, token)] as const)),
+    Promise.all(adIds.map(async (id) => [id, await fetchMetaObjectName(id, token)] as const)),
+  ]);
+
+  const adSetNameMap = new Map(adSetEntries.filter(([, name]) => Boolean(name)));
+  const adNameMap = new Map(adEntries.filter(([, name]) => Boolean(name)));
+
+  return rows.map((row) => ({
+    ...row,
+    adSetName: row.adSetName || adSetNameMap.get(row.adSetId) || '',
+    adName: row.adName || adNameMap.get(row.adId) || '',
+  }));
 }
 
 export async function GET(request: Request) {
@@ -90,6 +195,8 @@ export async function GET(request: Request) {
         utmMedium: (attr.utm_medium || 'unknown') as string,
         adSetId: getAdSetId(attr),
         adId: getAdId(attr),
+        adSetName: getAdSetName(attr),
+        adName: getAdName(attr),
         view: 0,
         click: 0,
         openSuccess: 0,
@@ -106,7 +213,7 @@ export async function GET(request: Request) {
       buckets.set(key, current);
     }
 
-    const rows = Array.from(buckets.values())
+    let rows = Array.from(buckets.values())
       .map((row) => ({
         ...row,
         clickRatePct: toRate(row.click, row.view),
@@ -119,6 +226,13 @@ export async function GET(request: Request) {
         return b.click - a.click;
       })
       .slice(0, limit);
+
+    try {
+      const token = await resolveAdsReadToken(scope);
+      rows = await enrichNamesFromMetaApi(rows, token);
+    } catch (lookupError) {
+      console.warn('Meta 广告名称反查失败（已忽略）', lookupError);
+    }
 
     return NextResponse.json({ ok: true, scope, range, rows });
   } catch (error: any) {
