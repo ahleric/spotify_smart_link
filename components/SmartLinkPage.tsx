@@ -144,6 +144,14 @@ function detectRoutingContext(userAgent: string): RoutingContext {
   };
 }
 
+function toEventContext(context: RoutingContext) {
+  return {
+    os: context.os,
+    is_mobile: context.isMobile,
+    in_app_browser: context.inAppBrowser,
+  };
+}
+
 function buildRoutingPlan(
   releaseData: ReleaseData,
   context: RoutingContext,
@@ -341,7 +349,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
 
     dispatchTrackEvent('SmartLinkView', {
       eventId: viewEventId,
-      context: detectRoutingContext(navigator.userAgent || ''),
+      context: toEventContext(detectRoutingContext(navigator.userAgent || '')),
       route: { strategy: 'view', reason: 'page-load' },
       forwardToFacebook: true,
       usePixel: true,
@@ -355,11 +363,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
 
     const routingContext = detectRoutingContext(navigator.userAgent || '');
     const routingPlan = buildRoutingPlan(releaseData, routingContext);
-    const sharedContext = {
-      os: routingContext.os,
-      in_app_browser: routingContext.inAppBrowser,
-      is_mobile: routingContext.isMobile,
-    };
+    const sharedContext = toEventContext(routingContext);
     const sharedRoute = {
       strategy: routingPlan.strategy,
       deep_link_delay_ms: routingPlan.deepLinkDelayMs,
