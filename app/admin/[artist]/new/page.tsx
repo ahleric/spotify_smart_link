@@ -63,6 +63,15 @@ export default function NewSongPage() {
     load();
   }, [artistSlug]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (artist?.name) {
+      document.title = `管理后台 - 新建歌曲：${artist.name}`;
+    } else {
+      document.title = '管理后台 - 新建歌曲';
+    }
+  }, [artist?.name]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);

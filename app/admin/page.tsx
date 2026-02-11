@@ -25,6 +25,9 @@ export default function AdminHome() {
   });
 
   useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = '管理后台 - 艺人列表';
+    }
     fetch('/api/admin/artists')
       .then(async (res) => {
         const json = await res.json();

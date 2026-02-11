@@ -49,6 +49,15 @@ export default function ArtistDetailPage() {
     load();
   }, [artistSlug]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (artist?.name) {
+      document.title = `管理后台 - 艺人：${artist.name}`;
+    } else {
+      document.title = '管理后台 - 艺人';
+    }
+  }, [artist?.name]);
+
   const buildLink = (slug: string) => {
     if (typeof window === 'undefined') return slug;
     const clean = slug.replace(/^\/+/, '');

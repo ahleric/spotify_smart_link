@@ -74,6 +74,15 @@ export default function EditSongPage() {
     load();
   }, [songId]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (song?.track_title) {
+      document.title = `管理后台 - 编辑歌曲：${song.track_title}`;
+    } else {
+      document.title = '管理后台 - 编辑歌曲';
+    }
+  }, [song?.track_title]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
