@@ -2,7 +2,7 @@
 
 import { CalendarRange, Disc3, Info, SlidersHorizontal, UserRound } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import KpiCards from '@/components/admin/analytics/KpiCards';
 import TrendChart from '@/components/admin/analytics/TrendChart';
 import QualifiedRateChart from '@/components/admin/analytics/QualifiedRateChart';
@@ -128,7 +128,7 @@ function getCustomRangeError(filters: Filters) {
   return null;
 }
 
-export default function AnalyticsDashboardPage() {
+function AnalyticsDashboardContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchSnapshot = searchParams.toString();
@@ -407,5 +407,19 @@ export default function AnalyticsDashboardPage() {
 
       <HighIntentTable data={highIntent} loading={loading} />
     </div>
+  );
+}
+
+export default function AnalyticsDashboardPage() {
+  return (
+    <Suspense
+      fallback={(
+        <div className="rounded-2xl border border-white/10 bg-slate-900/75 p-4 text-sm text-white/70 ring-1 ring-white/5">
+          仪表盘加载中...
+        </div>
+      )}
+    >
+      <AnalyticsDashboardContent />
+    </Suspense>
   );
 }
