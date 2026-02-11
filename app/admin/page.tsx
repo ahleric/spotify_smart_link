@@ -84,9 +84,17 @@ export default function AdminHome() {
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="space-y-2">
-          <p className="text-sm uppercase tracking-widest text-emerald-400">Admin Panel</p>
-          <h1 className="text-3xl font-bold">Artist Profiles</h1>
-          <p className="text-sm text-white/70">先创建艺人 Profile，再在艺人页里创建歌曲落地页。</p>
+          <p className="text-sm uppercase tracking-widest text-emerald-400">管理后台</p>
+          <h1 className="text-3xl font-bold">艺人档案</h1>
+          <p className="text-sm text-white/70">先创建艺人档案，再在艺人页里创建歌曲落地页。</p>
+          <div>
+            <Link
+              href="/admin/analytics"
+              className="inline-flex min-h-11 items-center rounded-lg bg-emerald-500/90 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400"
+            >
+              打开数据仪表盘
+            </Link>
+          </div>
           {error && <p className="text-sm text-rose-400">错误：{error}</p>}
         </header>
 
@@ -160,7 +168,7 @@ export default function AdminHome() {
               disabled={saving}
               className="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-6 py-3 text-base font-semibold text-slate-900 shadow-[0_10px_30px_rgba(16,185,129,0.35)] transition hover:translate-y-px disabled:opacity-60"
             >
-              {saving ? '提交中...' : '创建 Artist Profile'}
+              {saving ? '提交中...' : '创建艺人档案'}
             </button>
           </form>
 

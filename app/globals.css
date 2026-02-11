@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 主题色变量：用于落地页背景与光晕层 */
+:root {
+  --bg-base: #07090f;
+  --bg-ink: #0b111a;
+  --glow-sky: 56, 189, 248;
+  --glow-amber: 251, 191, 36;
+  --glow-rose: 244, 63, 94;
+}
+
 /* 全局基础样式：保持极简，交给 Tailwind 工具类控制。 */
 body {
   background-color: #000;

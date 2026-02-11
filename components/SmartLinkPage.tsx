@@ -279,7 +279,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
   const fadeStyle = useMemo(
     () => ({
       backgroundImage:
-        'linear-gradient(180deg, rgba(11, 17, 26, 0.32) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 1) 100%)',
+        'linear-gradient(180deg, rgba(11, 17, 26, 0.14) 0%, rgba(0, 0, 0, 0.48) 58%, rgba(0, 0, 0, 0.84) 100%)',
     }),
     [],
   );
@@ -488,18 +488,18 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
           fill
           priority
           sizes="100vw"
-          className="object-cover scale-110 blur-2xl md:blur-3xl brightness-[0.58] md:brightness-[0.44] saturate-125 contrast-[1.08]"
+          className="object-cover scale-110 blur-2xl md:blur-3xl brightness-[0.72] md:brightness-[0.44] saturate-125 contrast-[1.08]"
         />
         <div
-          className="absolute inset-0 opacity-[0.78] md:opacity-100"
+          className="absolute inset-0 opacity-[0.86] md:opacity-100"
           style={glowStyle}
         />
-        <div className="absolute inset-0 opacity-[0.74] md:opacity-100" style={fadeStyle} />
+        <div className="absolute inset-0 opacity-[0.56] md:opacity-100" style={fadeStyle} />
         <div
-          className="absolute inset-0 opacity-[0.06] md:opacity-[0.08] mix-blend-soft-light"
+          className="absolute inset-0 opacity-[0.05] md:opacity-[0.08] mix-blend-soft-light"
           style={grainStyle}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.16),transparent_48%)] opacity-50 md:opacity-35" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.2),transparent_52%)] opacity-60 md:opacity-35" />
       </div>
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-5 mb-4">
