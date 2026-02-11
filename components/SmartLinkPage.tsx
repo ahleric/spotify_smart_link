@@ -2,13 +2,42 @@
 
 import Image from 'next/image';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import {
+  useSearchParams,
+  type ReadonlyURLSearchParams,
+} from 'next/navigation';
 import PixelBase from '@/components/PixelBase';
 import { pixelConfig, type ReleaseData } from '@/lib/config';
 
 type SmartLinkPageProps = {
   releaseData: ReleaseData;
 };
+
+const ATTR_PARAM_KEYS = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_content',
+  'utm_term',
+  'campaign_id',
+  'adset_id',
+  'ad_id',
+  'fbclid',
+  'gclid',
+  'ttclid',
+  'msclkid',
+] as const;
+
+function collectAttribution(searchParams: URLSearchParams | ReadonlyURLSearchParams) {
+  const result: Record<string, string> = {};
+  for (const key of ATTR_PARAM_KEYS) {
+    const value = searchParams.get(key)?.trim();
+    if (value) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
 
 function PageContent({ releaseData }: SmartLinkPageProps) {
   const searchParams = useSearchParams();
@@ -22,6 +51,10 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       '',
     [searchParams],
   );
+  const attribution = useMemo(
+    () => collectAttribution(searchParams),
+    [searchParams],
+  );
   const eventId = useMemo(
     () => testEventCode || `click-${Date.now()}`,
     [testEventCode],
@@ -31,6 +64,30 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     [],
   );
   const [mounted, setMounted] = useState(false);
+  const glowStyle = useMemo(
+    () => ({
+      backgroundImage:
+        'radial-gradient(circle at 18% 12%, rgba(var(--glow-sky), 0.26), transparent 38%),' +
+        'radial-gradient(circle at 82% 6%, rgba(var(--glow-amber), 0.18), transparent 34%),' +
+        'radial-gradient(circle at 72% 82%, rgba(var(--glow-rose), 0.18), transparent 38%)',
+    }),
+    [],
+  );
+  const grainStyle = useMemo(
+    () => ({
+      backgroundImage:
+        'radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px)',
+      backgroundSize: '3px 3px',
+    }),
+    [],
+  );
+  const fadeStyle = useMemo(
+    () => ({
+      backgroundImage:
+        'linear-gradient(180deg, rgba(11, 17, 26, 0.32) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 1) 100%)',
+    }),
+    [],
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -61,6 +118,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       metaPixelId: pixelId,
       facebookAccessToken,
       eventSourceUrl: typeof window !== 'undefined' ? window.location.href : '',
+      attribution,
     });
     const sendView = () => {
       const ok =
@@ -77,7 +135,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       }
     };
     sendView();
-  }, [facebookAccessToken, pixelId, testEventCode, viewEventId]);
+  }, [attribution, facebookAccessToken, pixelId, testEventCode, viewEventId]);
 
   const handlePlay = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -98,6 +156,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       metaPixelId: pixelId,
       facebookAccessToken,
       eventSourceUrl: typeof window !== 'undefined' ? window.location.href : '',
+      attribution,
     });
 
     // 优先 sendBeacon，回落 fetch keepalive，避免跳转时丢包
@@ -141,6 +200,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     releaseData.spotifyDeepLink,
     releaseData.spotifyWebLink,
     testEventCode,
+    attribution,
   ]);
 
   return (
@@ -149,16 +209,27 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       <PixelBase pixelId={pixelId} />
       {/* 背景：轻量模糊封面 + 暗色渐变 */}
       <div className="absolute inset-0 -z-10">
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: 'var(--bg-base)' }}
+        />
         <Image
           src={releaseData.coverImage}
           alt="background"
           fill
           priority
           sizes="100vw"
-          className="object-cover blur-3xl brightness-[0.55] saturate-125"
+          className="object-cover blur-3xl brightness-[0.38] saturate-125 contrast-[1.08]"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/50 via-black/65 to-black" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.25),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.2),transparent_30%)]" />
+        <div
+          className="absolute inset-0 opacity-100"
+          style={glowStyle}
+        />
+        <div className="absolute inset-0" style={fadeStyle} />
+        <div
+          className="absolute inset-0 opacity-[0.08] mix-blend-soft-light"
+          style={grainStyle}
+        />
       </div>
 
       <div className="flex w-full max-w-md flex-col items-center gap-5 mb-4">
