@@ -236,8 +236,6 @@ function buildEventId(prefix: string) {
 function PageContent({ releaseData }: SmartLinkPageProps) {
   const searchParams = useSearchParams();
   const pixelId = releaseData.metaPixelId || pixelConfig.metaPixelId;
-  const facebookAccessToken =
-    releaseData.facebookAccessToken || pixelConfig.facebookAccessToken;
   const testEventCode = useMemo(
     () =>
       searchParams.get('test_event_code')?.trim() ||
@@ -307,9 +305,8 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       eventName,
       eventId,
       testEventCode,
-      metaPixelId: pixelId,
-      facebookAccessToken,
       eventSourceUrl: window.location.href,
+      trackingAuthToken: releaseData.trackingAuthToken || '',
       attribution: {
         ...attribution,
         ...(options.extraAttribution || {}),
@@ -333,7 +330,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
         keepalive: true,
       }).catch(() => undefined);
     }
-  }, [attribution, facebookAccessToken, pixelId, testEventCode]);
+  }, [attribution, releaseData.trackingAuthToken, testEventCode]);
 
   useEffect(() => {
     setMounted(true);
@@ -486,7 +483,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
           src={releaseData.coverImage}
           alt="background"
           fill
-          priority
+          quality={45}
           sizes="100vw"
           className="object-cover scale-110 blur-2xl md:blur-3xl brightness-[0.72] md:brightness-[0.44] saturate-125 contrast-[1.08]"
         />

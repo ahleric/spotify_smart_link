@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import SmartLinkPage from '@/components/SmartLinkPage';
 import { getSupabaseClient } from '@/lib/supabase';
 import type { ReleaseData } from '@/lib/config';
+import { createTrackingAuthToken } from '@/lib/tracking-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
@@ -15,7 +16,7 @@ const getRelease = async (slugSegments: string[]): Promise<ReleaseData> => {
   const { data, error } = await supabase
     .from('songs')
     .select(
-      'artist_name, track_title, cover_image_url, spotify_web_link, spotify_deep_link, meta_pixel_id, facebook_access_token, routing_config, tracking_config, artist:artists!inner(meta_pixel_id, facebook_access_token, name, slug, routing_config, tracking_config)',
+      'artist_name, track_title, cover_image_url, spotify_web_link, spotify_deep_link, meta_pixel_id, routing_config, tracking_config, artist:artists!inner(meta_pixel_id, name, slug, routing_config, tracking_config)',
     )
     .eq('slug', slug)
     .single();
@@ -27,9 +28,9 @@ const getRelease = async (slugSegments: string[]): Promise<ReleaseData> => {
 
   const artist = (data as any).artist?.[0] ?? (data as any).artist ?? {};
   const pixelId = data.meta_pixel_id ?? artist.meta_pixel_id ?? undefined;
-  const fbToken = data.facebook_access_token ?? artist.facebook_access_token ?? undefined;
   const routingConfig = data.routing_config ?? artist.routing_config ?? null;
   const trackingConfig = data.tracking_config ?? artist.tracking_config ?? null;
+  const trackingAuthToken = await createTrackingAuthToken(`/${slug}`);
 
   return {
     artistName: data.artist_name,
@@ -38,7 +39,7 @@ const getRelease = async (slugSegments: string[]): Promise<ReleaseData> => {
     spotifyWebLink: data.spotify_web_link,
     spotifyDeepLink: data.spotify_deep_link,
     metaPixelId: pixelId,
-    facebookAccessToken: fbToken,
+    trackingAuthToken,
     routingConfig,
     trackingConfig,
   };

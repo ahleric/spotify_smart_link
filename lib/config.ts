@@ -17,7 +17,7 @@ export type ReleaseData = {
   spotifyDeepLink: string;
   spotifyWebLink: string;
   metaPixelId?: string;
-  facebookAccessToken?: string;
+  trackingAuthToken?: string;
   routingConfig?: RoutingConfig | null;
   trackingConfig?: TrackingConfig | null;
 };
@@ -30,7 +30,7 @@ export const fallbackReleaseData: ReleaseData = {
   spotifyDeepLink: 'spotify://track/0dOp6hAL0Vf6lYk9UU3Uhn',
   spotifyWebLink: 'https://open.spotify.com/track/0dOp6hAL0Vf6lYk9UU3Uhn?si=fc784f6962fc424a',
   metaPixelId: '',
-  facebookAccessToken: '',
+  trackingAuthToken: '',
   routingConfig: null,
   trackingConfig: null,
 };
