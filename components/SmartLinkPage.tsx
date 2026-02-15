@@ -180,9 +180,11 @@ function buildRoutingPlan(
     };
   }
 
-  const baseDeepLinkDelay = context.os === 'ios' ? 180 : 120;
-  const baseFallbackDelay = context.os === 'ios' ? 1200 : 900;
-  const inAppExtra = context.inAppBrowser === 'none' ? 0 : 420;
+  const isAndroidInstagram =
+    context.os === 'android' && context.inAppBrowser === 'instagram';
+  const baseDeepLinkDelay = isAndroidInstagram ? 0 : context.os === 'ios' ? 180 : 120;
+  const baseFallbackDelay = isAndroidInstagram ? 3200 : context.os === 'ios' ? 1200 : 900;
+  const inAppExtra = isAndroidInstagram ? 0 : context.inAppBrowser === 'none' ? 0 : 420;
 
   const deepLinkDelayMs = clampMs(
     routingConfig.deepLinkDelayMs,
@@ -200,7 +202,9 @@ function buildRoutingPlan(
     routingConfig.successSignalWindowMs,
     fallbackDelayMs + 200,
     MAX_DELAY_MS,
-    Math.max(fallbackDelayMs + 1200, 2200),
+    isAndroidInstagram
+      ? Math.max(fallbackDelayMs + 3200, 6800)
+      : Math.max(fallbackDelayMs + 1200, 2200),
   );
 
   return {
@@ -210,6 +214,19 @@ function buildRoutingPlan(
     successSignalWindowMs,
     reason: context.inAppBrowser === 'none' ? 'mobile-browser' : `in-app-${context.inAppBrowser}`,
   };
+}
+
+function buildAndroidSpotifyIntentUrl(deepLink: string, webLink: string) {
+  const trimmed = deepLink.trim();
+  if (!trimmed) return deepLink;
+  const basePath = trimmed.startsWith('spotify://')
+    ? trimmed.slice('spotify://'.length)
+    : trimmed.startsWith('spotify:')
+      ? trimmed.slice('spotify:'.length).replace(/:/g, '/')
+      : '';
+  if (!basePath) return deepLink;
+  const fallbackUrl = encodeURIComponent(webLink.trim());
+  return `intent://${basePath}#Intent;scheme=spotify;package=com.spotify.music;S.browser_fallback_url=${fallbackUrl};end`;
 }
 
 function shouldEmitQualified(pathname: string, cooldownMs: number) {
@@ -360,6 +377,12 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
 
     const routingContext = detectRoutingContext(navigator.userAgent || '');
     const routingPlan = buildRoutingPlan(releaseData, routingContext);
+    const useAndroidInstagramIntent =
+      routingContext.os === 'android' && routingContext.inAppBrowser === 'instagram';
+    const deepLinkTarget = useAndroidInstagramIntent
+      ? buildAndroidSpotifyIntentUrl(releaseData.spotifyDeepLink, releaseData.spotifyWebLink)
+      : releaseData.spotifyDeepLink;
+    const openTarget = useAndroidInstagramIntent ? 'spotify_intent' : 'spotify_app';
     const sharedContext = toEventContext(routingContext);
     const sharedRoute = {
       strategy: routingPlan.strategy,
@@ -401,24 +424,27 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     let fallbackTimer = 0;
     let deepLinkTimer = 0;
     let safetyTimer = 0;
+    let blurSignalTimer = 0;
 
     const cleanup = () => {
       openingRef.current = false;
       window.clearTimeout(fallbackTimer);
       window.clearTimeout(deepLinkTimer);
       window.clearTimeout(safetyTimer);
+      window.clearTimeout(blurSignalTimer);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('blur', handleWindowBlur);
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== 'hidden') return;
+    const markOpenSuccess = (signal: 'visibilitychange' | 'pagehide' | 'blur') => {
       if (settled) return;
       settled = true;
       cleanup();
 
       dispatchTrackEvent('SmartLinkOpenSuccess', {
         context: sharedContext,
-        route: { ...sharedRoute, open_target: 'spotify_app' },
+        route: { ...sharedRoute, open_target: openTarget, success_signal: signal },
         forwardToFacebook: true,
         usePixel: true,
       });
@@ -426,23 +452,44 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       if (shouldEmitQualified(window.location.pathname, qualifiedCooldownMs)) {
         dispatchTrackEvent('SmartLinkQualified', {
           context: sharedContext,
-          route: { ...sharedRoute, audience_tier: 'high_intent' },
+          route: { ...sharedRoute, audience_tier: 'high_intent', success_signal: signal },
           forwardToFacebook: true,
           usePixel: true,
         });
       }
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'hidden') return;
+      markOpenSuccess('visibilitychange');
+    };
+
+    const handlePageHide = () => {
+      markOpenSuccess('pagehide');
+    };
+
+    const handleWindowBlur = () => {
+      if (!useAndroidInstagramIntent) return;
+      blurSignalTimer = window.setTimeout(() => {
+        if (settled) return;
+        if (document.visibilityState === 'hidden' || !document.hasFocus()) {
+          markOpenSuccess('blur');
+        }
+      }, 120);
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('blur', handleWindowBlur);
 
     deepLinkTimer = window.setTimeout(() => {
       dispatchTrackEvent('SmartLinkOpenAttempt', {
         context: sharedContext,
-        route: { ...sharedRoute, open_target: 'spotify_app' },
+        route: { ...sharedRoute, open_target: openTarget },
         forwardToFacebook: false,
         usePixel: false,
       });
-      window.location.href = releaseData.spotifyDeepLink;
+      window.location.href = deepLinkTarget;
     }, routingPlan.deepLinkDelayMs);
 
     fallbackTimer = window.setTimeout(() => {
