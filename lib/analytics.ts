@@ -30,6 +30,8 @@ export const ANALYTICS_EVENTS = {
 export const DEFAULT_DAYS = 7;
 export const VALID_DAY_OPTIONS = [7, 14, 30] as const;
 export const MAX_CUSTOM_RANGE_DAYS = 180;
+const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function normalizeScope(
   searchParams: URLSearchParams,
@@ -50,39 +52,72 @@ export function resolveDays(searchParams: URLSearchParams) {
     : DEFAULT_DAYS;
 }
 
+function formatDayKey(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function parseDayKey(dayKey: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) return null;
+  const [yearText, monthText, dayText] = dayKey.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const utcMs = Date.UTC(year, month - 1, day);
+  const normalized = formatDayKey(new Date(utcMs));
+  if (normalized !== dayKey) return null;
+  return { year, month, day };
+}
+
+function dayKeyToUtcMs(dayKey: string) {
+  const parsed = parseDayKey(dayKey);
+  if (!parsed) return null;
+  return Date.UTC(parsed.year, parsed.month - 1, parsed.day);
+}
+
+function addDays(dayKey: string, days: number) {
+  const utcMs = dayKeyToUtcMs(dayKey);
+  if (utcMs === null) return dayKey;
+  return formatDayKey(new Date(utcMs + days * DAY_MS));
+}
+
+function diffDaysInclusive(startDay: string, endDay: string) {
+  const startMs = dayKeyToUtcMs(startDay);
+  const endMs = dayKeyToUtcMs(endDay);
+  if (startMs === null || endMs === null || startMs > endMs) return 0;
+  return Math.floor((endMs - startMs) / DAY_MS) + 1;
+}
+
+function dayKeyNowBeijing() {
+  return formatDayKey(new Date(Date.now() + BEIJING_OFFSET_MS));
+}
+
+function beijingDayStartIso(dayKey: string) {
+  const utcMs = dayKeyToUtcMs(dayKey);
+  if (utcMs === null) return new Date().toISOString();
+  return new Date(utcMs - BEIJING_OFFSET_MS).toISOString();
+}
+
+function beijingDayKeyFromIso(iso: string) {
+  const timeMs = new Date(iso).getTime();
+  if (!Number.isFinite(timeMs)) return iso.slice(0, 10);
+  return formatDayKey(new Date(timeMs + BEIJING_OFFSET_MS));
+}
+
 export function buildRange(days: number): AnalyticsRange {
-  const end = new Date();
-  const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000);
-  const startDate = start.toISOString().slice(0, 10);
-  const endDate = new Date(end.getTime() - 1).toISOString().slice(0, 10);
+  const safeDays = Math.max(1, Math.round(days || DEFAULT_DAYS));
+  const endDate = dayKeyNowBeijing();
+  const startDate = addDays(endDate, -(safeDays - 1));
+  const endExclusiveDate = addDays(endDate, 1);
   return {
-    range: days === 1 ? 'today' : days === 7 ? 'week' : days === 30 ? 'month' : 'custom',
-    days,
-    startIso: start.toISOString(),
-    endIso: end.toISOString(),
+    range: safeDays === 1 ? 'today' : safeDays === 7 ? 'week' : safeDays === 30 ? 'month' : 'custom',
+    days: safeDays,
+    startIso: beijingDayStartIso(startDate),
+    endIso: beijingDayStartIso(endExclusiveDate),
     startDate,
     endDate,
   };
-}
-
-function parseIsoDate(dateText: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText)) return null;
-  const d = new Date(`${dateText}T00:00:00.000Z`);
-  if (Number.isNaN(d.getTime())) return null;
-  return d;
-}
-
-function startOfUtcDay(d: Date) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
-
-function addUtcDays(d: Date, days: number) {
-  return new Date(d.getTime() + days * 24 * 60 * 60 * 1000);
-}
-
-function diffDaysInclusive(start: Date, endInclusive: Date) {
-  const diff = endInclusive.getTime() - start.getTime();
-  return Math.floor(diff / (24 * 60 * 60 * 1000)) + 1;
 }
 
 export function resolveRange(searchParams: URLSearchParams): AnalyticsRange {
@@ -94,102 +129,102 @@ export function resolveRange(searchParams: URLSearchParams): AnalyticsRange {
     return buildRange(fallbackDays);
   }
 
-  const now = new Date();
-  const nowStart = startOfUtcDay(now);
+  const today = dayKeyNowBeijing();
 
   if (rangeRaw === 'today' || rangeRaw === 'day') {
-    const start = nowStart;
-    const end = addUtcDays(start, 1);
+    const startDate = today;
+    const endExclusiveDate = addDays(startDate, 1);
     return {
       range: 'today',
       days: 1,
-      startIso: start.toISOString(),
-      endIso: end.toISOString(),
-      startDate: start.toISOString().slice(0, 10),
-      endDate: start.toISOString().slice(0, 10),
+      startIso: beijingDayStartIso(startDate),
+      endIso: beijingDayStartIso(endExclusiveDate),
+      startDate,
+      endDate: startDate,
     };
   }
 
   if (rangeRaw === 'yesterday') {
-    const start = addUtcDays(nowStart, -1);
-    const end = nowStart;
+    const startDate = addDays(today, -1);
+    const endExclusiveDate = today;
     return {
       range: 'yesterday',
       days: 1,
-      startIso: start.toISOString(),
-      endIso: end.toISOString(),
-      startDate: start.toISOString().slice(0, 10),
-      endDate: start.toISOString().slice(0, 10),
+      startIso: beijingDayStartIso(startDate),
+      endIso: beijingDayStartIso(endExclusiveDate),
+      startDate,
+      endDate: startDate,
     };
   }
 
   if (rangeRaw === 'month' || rangeRaw === 'last_30d') {
-    const start = addUtcDays(nowStart, -29);
-    const end = addUtcDays(nowStart, 1);
+    const endDate = today;
+    const startDate = addDays(endDate, -29);
+    const endExclusiveDate = addDays(endDate, 1);
     return {
       range: 'month',
       days: 30,
-      startIso: start.toISOString(),
-      endIso: end.toISOString(),
-      startDate: start.toISOString().slice(0, 10),
-      endDate: nowStart.toISOString().slice(0, 10),
+      startIso: beijingDayStartIso(startDate),
+      endIso: beijingDayStartIso(endExclusiveDate),
+      startDate,
+      endDate,
     };
   }
 
   if (rangeRaw === 'custom') {
     const startRaw = (searchParams.get('start_date') || '').trim();
     const endRaw = (searchParams.get('end_date') || '').trim();
-    const start = parseIsoDate(startRaw);
-    const endInclusive = parseIsoDate(endRaw);
-    if (start && endInclusive && start.getTime() <= endInclusive.getTime()) {
-      const days = diffDaysInclusive(start, endInclusive);
+    const startDate = parseDayKey(startRaw) ? startRaw : '';
+    const endDate = parseDayKey(endRaw) ? endRaw : '';
+    if (startDate && endDate && startDate <= endDate) {
+      const days = diffDaysInclusive(startDate, endDate);
       const boundedDays = Math.min(MAX_CUSTOM_RANGE_DAYS, Math.max(1, days));
-      const boundedEndInclusive = addUtcDays(start, boundedDays - 1);
-      const endExclusive = addUtcDays(boundedEndInclusive, 1);
+      const boundedEndDate = addDays(startDate, boundedDays - 1);
+      const endExclusiveDate = addDays(boundedEndDate, 1);
       return {
         range: 'custom',
         days: boundedDays,
-        startIso: start.toISOString(),
-        endIso: endExclusive.toISOString(),
-        startDate: start.toISOString().slice(0, 10),
-        endDate: boundedEndInclusive.toISOString().slice(0, 10),
+        startIso: beijingDayStartIso(startDate),
+        endIso: beijingDayStartIso(endExclusiveDate),
+        startDate,
+        endDate: boundedEndDate,
       };
     }
   }
 
   if (rangeRaw === 'week' || rangeRaw === 'last_7d') {
-    const start = addUtcDays(nowStart, -6);
-    const end = addUtcDays(nowStart, 1);
+    const endDate = today;
+    const startDate = addDays(endDate, -6);
+    const endExclusiveDate = addDays(endDate, 1);
     return {
       range: 'week',
       days: 7,
-      startIso: start.toISOString(),
-      endIso: end.toISOString(),
-      startDate: start.toISOString().slice(0, 10),
-      endDate: nowStart.toISOString().slice(0, 10),
+      startIso: beijingDayStartIso(startDate),
+      endIso: beijingDayStartIso(endExclusiveDate),
+      startDate,
+      endDate,
     };
   }
 
   // default: past 7 days
-  const start = addUtcDays(nowStart, -6);
-  const end = addUtcDays(nowStart, 1);
+  const endDate = today;
+  const startDate = addDays(endDate, -6);
+  const endExclusiveDate = addDays(endDate, 1);
   return {
     range: 'week',
     days: 7,
-    startIso: start.toISOString(),
-    endIso: end.toISOString(),
-    startDate: start.toISOString().slice(0, 10),
-    endDate: nowStart.toISOString().slice(0, 10),
+    startIso: beijingDayStartIso(startDate),
+    endIso: beijingDayStartIso(endExclusiveDate),
+    startDate,
+    endDate,
   };
 }
 
 export function enumerateDays(range: AnalyticsRange) {
   const result: string[] = [];
-  const start = parseIsoDate(range.startDate);
-  if (!start) return result;
+  if (!parseDayKey(range.startDate)) return result;
   for (let i = 0; i < range.days; i += 1) {
-    const d = addUtcDays(start, i);
-    result.push(d.toISOString().slice(0, 10));
+    result.push(addDays(range.startDate, i));
   }
   return result;
 }
@@ -216,7 +251,7 @@ export function maxIso(isoA: string, isoB?: string | null) {
 }
 
 export function toDayKey(iso: string) {
-  return iso.slice(0, 10);
+  return beijingDayKeyFromIso(iso);
 }
 
 export function parseContext(payload: any) {
