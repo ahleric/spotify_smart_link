@@ -272,3 +272,38 @@ export function parseRoute(payload: any) {
     deepLinkDelayMs: Number(route.deep_link_delay_ms || 0),
   };
 }
+
+type PagedFetchResult<T> = {
+  data: T[] | null;
+  error: { message?: string } | null;
+};
+
+export async function fetchAllPagedRows<T>(params: {
+  fetchPage: (from: number, to: number) => Promise<PagedFetchResult<T>>;
+  pageSize?: number;
+  maxRows?: number;
+}) {
+  const pageSize = Math.max(100, Math.min(1000, Math.round(params.pageSize || 1000)));
+  const maxRows = Math.max(pageSize, Math.round(params.maxRows || 200000));
+  const rows: T[] = [];
+
+  for (let from = 0; from < maxRows; from += pageSize) {
+    const to = from + pageSize - 1;
+    const { data, error } = await params.fetchPage(from, to);
+    if (error) {
+      throw new Error(error.message || '读取分页数据失败');
+    }
+
+    const batch = data || [];
+    rows.push(...batch);
+
+    if (batch.length < pageSize || rows.length >= maxRows) {
+      break;
+    }
+  }
+
+  if (rows.length > maxRows) {
+    return rows.slice(0, maxRows);
+  }
+  return rows;
+}

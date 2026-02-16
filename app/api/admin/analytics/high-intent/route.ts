@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 import {
   ANALYTICS_EVENTS,
   applyScopeToQuery,
+  fetchAllPagedRows,
   isScopeReady,
   normalizeScope,
   resolveRange,
@@ -54,27 +55,33 @@ export async function GET(request: Request) {
     }
 
     const supabase = getSupabaseClient('service');
-    let query = supabase
-      .from('landing_page_events')
-      .select('event_name, event_id, created_at, fbp, fbc, attribution, payload')
-      .in('event_name', [
-        ANALYTICS_EVENTS.view,
-        ANALYTICS_EVENTS.click,
-        ANALYTICS_EVENTS.openSuccess,
-        ANALYTICS_EVENTS.qualified,
-      ])
-      .gte('created_at', range.startIso)
-      .lt('created_at', range.endIso)
-      .order('created_at', { ascending: false });
+    const loadPage = (from: number, to: number) => {
+      let query = supabase
+        .from('landing_page_events')
+        .select('event_name, event_id, created_at, fbp, fbc, attribution, payload')
+        .in('event_name', [
+          ANALYTICS_EVENTS.view,
+          ANALYTICS_EVENTS.click,
+          ANALYTICS_EVENTS.openSuccess,
+          ANALYTICS_EVENTS.qualified,
+        ])
+        .gte('created_at', range.startIso)
+        .lt('created_at', range.endIso)
+        .order('created_at', { ascending: false });
 
-    query = applyScopeToQuery(query, scope);
+      query = applyScopeToQuery(query, scope);
+      return query.range(from, to);
+    };
 
-    const { data, error } = await query.range(0, 120000);
-    if (error) throw new Error(error.message);
+    const data = await fetchAllPagedRows({
+      fetchPage: loadPage,
+      pageSize: 1000,
+      maxRows: 250000,
+    });
 
     const buckets = new Map<string, AudienceBucket>();
 
-    for (const row of data || []) {
+    for (const row of data) {
       const key = extractAudienceKey(row);
       if (!key) continue;
       const attr = (row as any).attribution || {};

@@ -4,6 +4,7 @@ import {
   ANALYTICS_EVENTS,
   applyScopeToQuery,
   enumerateDays,
+  fetchAllPagedRows,
   isScopeReady,
   normalizeScope,
   resolveRange,
@@ -35,26 +36,29 @@ export async function GET(request: Request) {
 
     const supabase = getSupabaseClient('service');
 
-    let query = supabase
-      .from('landing_page_events')
-      .select('event_name, created_at')
-      .in('event_name', [
-        ANALYTICS_EVENTS.view,
-        ANALYTICS_EVENTS.click,
-        ANALYTICS_EVENTS.openSuccess,
-        ANALYTICS_EVENTS.qualified,
-        ANALYTICS_EVENTS.openFallback,
-      ])
-      .gte('created_at', range.startIso)
-      .lt('created_at', range.endIso)
-      .order('created_at', { ascending: true });
+    const loadPage = (from: number, to: number) => {
+      let query = supabase
+        .from('landing_page_events')
+        .select('event_name, created_at')
+        .in('event_name', [
+          ANALYTICS_EVENTS.view,
+          ANALYTICS_EVENTS.click,
+          ANALYTICS_EVENTS.openSuccess,
+          ANALYTICS_EVENTS.qualified,
+          ANALYTICS_EVENTS.openFallback,
+        ])
+        .gte('created_at', range.startIso)
+        .lt('created_at', range.endIso)
+        .order('created_at', { ascending: true });
+      query = applyScopeToQuery(query, scope);
+      return query.range(from, to);
+    };
 
-    query = applyScopeToQuery(query, scope);
-
-    const { data, error } = await query.range(0, 100000);
-    if (error) {
-      throw new Error(error.message);
-    }
+    const data = await fetchAllPagedRows({
+      fetchPage: loadPage,
+      pageSize: 1000,
+      maxRows: 250000,
+    });
 
     const dayMap = new Map<string, {
       day: string;
@@ -77,7 +81,7 @@ export async function GET(request: Request) {
       });
     }
 
-    for (const row of data || []) {
+    for (const row of data) {
       const day = toDayKey(row.created_at);
       const bucket = dayMap.get(day);
       if (!bucket) continue;
