@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
     const supabase = getSupabaseClient('service');
 
-    const loadPage = (from: number, to: number) => {
+    const loadPage = async (from: number, to: number) => {
       let query = supabase
         .from('landing_page_events')
         .select('event_name, created_at')
@@ -51,7 +51,8 @@ export async function GET(request: Request) {
         .lt('created_at', range.endIso)
         .order('created_at', { ascending: true });
       query = applyScopeToQuery(query, scope);
-      return query.range(from, to);
+      const { data, error } = await query.range(from, to);
+      return { data, error };
     };
 
     const data = await fetchAllPagedRows({
