@@ -3,7 +3,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const VERCEL_BUILD = 'npx vercel@50.1.2 build';
+const VERCEL_BUILD = 'vercel build';
 const NEXT_ON_PAGES = 'npx @cloudflare/next-on-pages@1.11.3 --skip-build';
 const VERCEL_PROJECT_JSON = path.join('.vercel', 'project.json');
 const FUNCTIONS_DIR = path.join('.vercel', 'output', 'functions');
