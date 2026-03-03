@@ -182,9 +182,28 @@ function buildRoutingPlan(
 
   const isAndroidInstagram =
     context.os === 'android' && context.inAppBrowser === 'instagram';
-  const baseDeepLinkDelay = isAndroidInstagram ? 0 : context.os === 'ios' ? 180 : 120;
-  const baseFallbackDelay = isAndroidInstagram ? 3200 : context.os === 'ios' ? 1200 : 900;
-  const inAppExtra = isAndroidInstagram ? 0 : context.inAppBrowser === 'none' ? 0 : 420;
+  const isAndroidFacebook =
+    context.os === 'android' && context.inAppBrowser === 'facebook';
+  const isIOSFacebook = context.os === 'ios' && context.inAppBrowser === 'facebook';
+
+  const baseDeepLinkDelay =
+    isAndroidInstagram || isAndroidFacebook ? 0 : context.os === 'ios' ? 180 : 120;
+  const baseFallbackDelay =
+    isAndroidInstagram || isAndroidFacebook
+      ? 3200
+      : isIOSFacebook
+        ? 2400
+        : context.os === 'ios'
+          ? 1200
+          : 900;
+  const inAppExtra =
+    isAndroidInstagram || isAndroidFacebook
+      ? 0
+      : context.inAppBrowser === 'facebook'
+        ? 900
+        : context.inAppBrowser === 'none'
+          ? 0
+          : 420;
 
   const deepLinkDelayMs = clampMs(
     routingConfig.deepLinkDelayMs,
@@ -202,7 +221,7 @@ function buildRoutingPlan(
     routingConfig.successSignalWindowMs,
     fallbackDelayMs + 200,
     MAX_DELAY_MS,
-    isAndroidInstagram
+    isAndroidInstagram || isAndroidFacebook
       ? Math.max(fallbackDelayMs + 3200, 6800)
       : Math.max(fallbackDelayMs + 1200, 2200),
   );
@@ -377,12 +396,13 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
 
     const routingContext = detectRoutingContext(navigator.userAgent || '');
     const routingPlan = buildRoutingPlan(releaseData, routingContext);
-    const useAndroidInstagramIntent =
-      routingContext.os === 'android' && routingContext.inAppBrowser === 'instagram';
-    const deepLinkTarget = useAndroidInstagramIntent
+    const useAndroidInAppIntent =
+      routingContext.os === 'android'
+      && (routingContext.inAppBrowser === 'instagram' || routingContext.inAppBrowser === 'facebook');
+    const deepLinkTarget = useAndroidInAppIntent
       ? buildAndroidSpotifyIntentUrl(releaseData.spotifyDeepLink, releaseData.spotifyWebLink)
       : releaseData.spotifyDeepLink;
-    const openTarget = useAndroidInstagramIntent ? 'spotify_intent' : 'spotify_app';
+    const openTarget = useAndroidInAppIntent ? 'spotify_intent' : 'spotify_app';
     const sharedContext = toEventContext(routingContext);
     const sharedRoute = {
       strategy: routingPlan.strategy,
@@ -468,14 +488,16 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       markOpenSuccess('pagehide');
     };
 
+    const shouldUseBlurSignal =
+      useAndroidInAppIntent || routingContext.inAppBrowser === 'facebook';
     const handleWindowBlur = () => {
-      if (!useAndroidInstagramIntent) return;
+      if (!shouldUseBlurSignal) return;
       blurSignalTimer = window.setTimeout(() => {
         if (settled) return;
         if (document.visibilityState === 'hidden' || !document.hasFocus()) {
           markOpenSuccess('blur');
         }
-      }, 120);
+      }, 160);
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -494,6 +516,12 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
 
     fallbackTimer = window.setTimeout(() => {
       if (settled) return;
+      // Some in-app browsers keep the document visible state stale while losing focus.
+      // Treat this as likely app handoff and avoid false fallback redirects.
+      if (document.visibilityState === 'hidden' || !document.hasFocus()) {
+        markOpenSuccess('blur');
+        return;
+      }
       settled = true;
       cleanup();
       dispatchTrackEvent('SmartLinkOpenFallback', {
