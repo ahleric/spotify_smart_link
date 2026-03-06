@@ -185,9 +185,14 @@ function buildRoutingPlan(
   const isAndroidFacebook =
     context.os === 'android' && context.inAppBrowser === 'facebook';
   const isIOSFacebook = context.os === 'ios' && context.inAppBrowser === 'facebook';
+  const isFacebookInApp = context.inAppBrowser === 'facebook';
 
   const baseDeepLinkDelay =
-    isAndroidInstagram || isAndroidFacebook ? 0 : context.os === 'ios' ? 180 : 120;
+    isAndroidInstagram || isAndroidFacebook || isIOSFacebook
+      ? 0
+      : context.os === 'ios'
+        ? 180
+        : 120;
   const baseFallbackDelay =
     isAndroidInstagram || isAndroidFacebook
       ? 3200
@@ -223,6 +228,8 @@ function buildRoutingPlan(
     MAX_DELAY_MS,
     isAndroidInstagram || isAndroidFacebook
       ? Math.max(fallbackDelayMs + 3200, 6800)
+      : isFacebookInApp
+        ? Math.max(fallbackDelayMs + 2200, 5600)
       : Math.max(fallbackDelayMs + 1200, 2200),
   );
 
@@ -399,16 +406,20 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     const useAndroidInAppIntent =
       routingContext.os === 'android'
       && (routingContext.inAppBrowser === 'instagram' || routingContext.inAppBrowser === 'facebook');
+    const shouldPreserveUserGesture = routingContext.inAppBrowser === 'facebook';
     const deepLinkTarget = useAndroidInAppIntent
       ? buildAndroidSpotifyIntentUrl(releaseData.spotifyDeepLink, releaseData.spotifyWebLink)
       : releaseData.spotifyDeepLink;
     const openTarget = useAndroidInAppIntent ? 'spotify_intent' : 'spotify_app';
+    const deepLinkInvocation =
+      shouldPreserveUserGesture || routingPlan.deepLinkDelayMs <= 0 ? 'sync' : 'timer';
     const sharedContext = toEventContext(routingContext);
     const sharedRoute = {
       strategy: routingPlan.strategy,
       deep_link_delay_ms: routingPlan.deepLinkDelayMs,
       fallback_delay_ms: routingPlan.fallbackDelayMs,
       success_signal_window_ms: routingPlan.successSignalWindowMs,
+      deep_link_invocation: deepLinkInvocation,
       reason: routingPlan.reason,
     };
     const clickEventId = testEventCode || buildEventId('click');
@@ -504,15 +515,21 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     window.addEventListener('pagehide', handlePageHide);
     window.addEventListener('blur', handleWindowBlur);
 
-    deepLinkTimer = window.setTimeout(() => {
+    const attemptDeepLinkOpen = () => {
       dispatchTrackEvent('SmartLinkOpenAttempt', {
         context: sharedContext,
         route: { ...sharedRoute, open_target: openTarget },
         forwardToFacebook: false,
         usePixel: false,
       });
-      window.location.href = deepLinkTarget;
-    }, routingPlan.deepLinkDelayMs);
+      window.location.assign(deepLinkTarget);
+    };
+
+    if (deepLinkInvocation === 'sync') {
+      attemptDeepLinkOpen();
+    } else {
+      deepLinkTimer = window.setTimeout(attemptDeepLinkOpen, routingPlan.deepLinkDelayMs);
+    }
 
     fallbackTimer = window.setTimeout(() => {
       if (settled) return;
