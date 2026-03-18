@@ -100,7 +100,7 @@ export default function TrendChart({ data, loading }: TrendChartProps) {
   const series = data?.series || [];
   if (series.length === 0) {
     return (
-      <div className="rounded-xl bg-slate-900/75 p-4 text-sm text-white/60 ring-1 ring-white/5">
+      <div className="rounded-xl bg-slate-900/75 p-4 text-sm text-white/60">
         暂无趋势数据。
       </div>
     );
@@ -129,7 +129,7 @@ export default function TrendChart({ data, loading }: TrendChartProps) {
   })();
 
   return (
-    <div className="h-[372px] rounded-xl border border-white/10 bg-slate-900/75 p-3.5 ring-1 ring-white/5 flex flex-col">
+    <div className="h-[372px] rounded-xl border border-white/10 bg-slate-900/75 p-3.5 flex flex-col">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-base font-semibold text-white">每日趋势（统一坐标）</h3>
         <div className="flex flex-wrap items-center gap-3 text-sm text-white/75">
@@ -139,7 +139,7 @@ export default function TrendChart({ data, loading }: TrendChartProps) {
             <i className="h-2.5 w-2.5 rounded-full bg-amber-300" />
             打开成功
           </span>
-          <span className="inline-flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-full bg-emerald-400" />合格</span>
+          <span className="inline-flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-full bg-spotify-400" />合格</span>
         </div>
       </div>
       <div className="w-full overflow-hidden flex-1">
@@ -175,7 +175,7 @@ export default function TrendChart({ data, loading }: TrendChartProps) {
           <line x1={PADDING_X} y1={CHART_BOTTOM} x2={WIDTH - PADDING_X} y2={CHART_BOTTOM} stroke="rgba(255,255,255,0.22)" />
           <SeriesLine values={viewValues} color="#cbd5e1" maxValue={maxValue} />
           <SeriesLine values={clickValues} color="#22d3ee" maxValue={maxValue} />
-          <SeriesLine values={qualifiedValues} color="#34d399" maxValue={maxValue} />
+          <SeriesLine values={qualifiedValues} color="#1DB954" maxValue={maxValue} />
           <DashedSeriesLine values={openValues} color="#fcd34d" maxValue={maxValue} />
 
           {series.map((item, index) => {
@@ -252,7 +252,7 @@ export default function TrendChart({ data, loading }: TrendChartProps) {
                 { label: '浏览', color: '#cbd5e1', value: hovered.view },
                 { label: '点击', color: '#22d3ee', value: hovered.click },
                 { label: '打开成功', color: '#fcd34d', value: hovered.openSuccess },
-                { label: '合格', color: '#34d399', value: hovered.qualified },
+                { label: '合格', color: '#1DB954', value: hovered.qualified },
               ].map((line, index) => (
                 <g key={line.label}>
                   <circle

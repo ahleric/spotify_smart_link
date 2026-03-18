@@ -91,7 +91,7 @@ export default function ArtistDetailPage() {
               ) : null}
             </div>
             <div>
-              <p className="text-xs tracking-[0.15em] text-emerald-300">艺人落地页管理</p>
+              <p className="text-xs tracking-[0.15em] text-indigo-300">艺人落地页管理</p>
               <h1 className="text-2xl font-semibold text-white md:text-3xl">{artist.name}</h1>
               <p className="text-sm text-white/65">/{artist.slug}</p>
               <p className="mt-1 text-sm text-white/68">
@@ -111,7 +111,7 @@ export default function ArtistDetailPage() {
             </Link>
             <Link
               href={`/admin/${artist.slug}/new` as Route}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-sm font-semibold text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.3)] transition hover:brightness-105"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-indigo-500 px-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(99,102,241,0.3)] transition hover:brightness-105"
             >
               <Plus className="h-4 w-4" />
               新建落地页
@@ -138,7 +138,7 @@ export default function ArtistDetailPage() {
           {songs.map((song) => (
             <div
               key={song.id}
-              className="group flex gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-emerald-400/55 hover:bg-white/[0.05]"
+              className="group flex gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-indigo-400/50 hover:bg-white/[0.05]"
             >
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/15 bg-slate-800">
                 {song.cover_image_url ? (
@@ -156,7 +156,7 @@ export default function ArtistDetailPage() {
                     onClick={() => handleCopyLink(song.slug)}
                     className={`inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold transition ${
                       copiedSlug === song.slug
-                        ? 'bg-emerald-500 text-slate-950'
+                        ? 'bg-indigo-500 text-white'
                         : 'border border-white/15 bg-white/5 text-white hover:bg-white/10'
                     }`}
                   >
@@ -176,7 +176,7 @@ export default function ArtistDetailPage() {
                     href={`/${song.slug.replace(/^\/+/, '')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-emerald-400/35 bg-emerald-500/15 px-2.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/28"
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-indigo-400/35 bg-indigo-500/15 px-2.5 text-xs font-semibold text-indigo-200 transition hover:bg-indigo-500/28"
                     aria-label="打开落地页"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />

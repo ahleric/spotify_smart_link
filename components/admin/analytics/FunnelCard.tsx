@@ -46,7 +46,12 @@ export default function FunnelCard({ summary, loading }: FunnelCardProps) {
             </div>
             <div className="h-2.5 rounded-full bg-slate-800">
               <div
-                className="h-2.5 rounded-full bg-emerald-400 transition-all"
+                className={`h-2.5 rounded-full transition-all ${
+                  step.key === 'view' ? 'bg-slate-400' :
+                  step.key === 'click' ? 'bg-cyan-400' :
+                  step.key === 'open-success' ? 'bg-amber-400' :
+                  'bg-spotify-400'
+                }`}
                 style={{ width: `${Math.max(4, Math.min(100, step.width))}%` }}
               />
             </div>

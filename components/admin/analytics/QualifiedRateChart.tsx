@@ -73,7 +73,7 @@ export default function QualifiedRateChart({ data, loading }: QualifiedRateChart
   const series = data?.series || [];
   if (series.length === 0) {
     return (
-      <div className="rounded-xl bg-slate-900/75 p-4 text-sm text-white/60 ring-1 ring-white/5">
+      <div className="rounded-xl bg-slate-900/75 p-4 text-sm text-white/60">
         暂无合格率趋势数据。
       </div>
     );
@@ -104,7 +104,7 @@ export default function QualifiedRateChart({ data, loading }: QualifiedRateChart
   })();
 
   return (
-    <div className="h-[372px] rounded-xl border border-white/10 bg-slate-900/75 p-3.5 ring-1 ring-white/5 flex flex-col">
+    <div className="h-[372px] rounded-xl border border-white/10 bg-slate-900/75 p-3.5 flex flex-col">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-base font-semibold text-white">合格率趋势（按点击）</h3>
         <span className="text-sm text-white/70">轻微曲线</span>
@@ -140,8 +140,8 @@ export default function QualifiedRateChart({ data, loading }: QualifiedRateChart
 
           <line x1={PADDING_X} y1={PADDING_Y} x2={PADDING_X} y2={CHART_BOTTOM} stroke="rgba(255,255,255,0.2)" />
           <line x1={PADDING_X} y1={CHART_BOTTOM} x2={WIDTH - PADDING_X} y2={CHART_BOTTOM} stroke="rgba(255,255,255,0.22)" />
-          <path d={areaPath} fill="rgba(16,185,129,0.18)" />
-          <path d={linePath} fill="none" stroke="#34d399" strokeWidth="2.8" strokeLinecap="round" />
+          <path d={areaPath} fill="rgba(29,185,84,0.14)" />
+          <path d={linePath} fill="none" stroke="#1DB954" strokeWidth="2.8" strokeLinecap="round" />
 
           {series.map((item, index) => {
             const x = seriesPointX(index, series.length);
@@ -217,7 +217,7 @@ export default function QualifiedRateChart({ data, loading }: QualifiedRateChart
                 cx={tooltipLayout.tooltipX + 12}
                 cy={tooltipLayout.tooltipY + 42}
                 r={4}
-                fill="#34d399"
+                fill="#1DB954"
               />
               <text
                 x={tooltipLayout.tooltipX + 22}

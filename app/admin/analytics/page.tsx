@@ -265,7 +265,7 @@ function AnalyticsDashboardContent() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       {error ? (
         <p className="inline-flex items-center gap-2 rounded-lg border border-rose-400/35 bg-rose-500/10 px-3 py-1.5 text-sm text-rose-300">
           <Info className="h-4 w-4" />
@@ -279,11 +279,12 @@ function AnalyticsDashboardContent() {
         </p>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-slate-900/75 p-3 ring-1 ring-white/5 md:p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <section className="rounded-2xl border border-white/8 bg-slate-900/75 p-4 md:p-5">
+        {/* 第一行：维度切换 + 歌曲选择 + 艺人信息徽章 */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-sm font-medium text-white/80">
-              <SlidersHorizontal className="h-4 w-4 text-emerald-300" />
+              <SlidersHorizontal className="h-4 w-4 text-indigo-300" />
               查看维度
             </span>
             <div className="inline-flex rounded-xl border border-white/10 bg-slate-950/70 p-1">
@@ -292,7 +293,7 @@ function AnalyticsDashboardContent() {
                 onClick={() => updateFilters({ mode: 'artist' })}
                 className={`min-h-8 rounded-lg px-3 text-sm font-semibold transition ${
                   filters.mode === 'artist'
-                    ? 'bg-emerald-500 text-slate-950'
+                    ? 'bg-indigo-500 text-white'
                     : 'text-white/75 hover:text-white'
                 }`}
               >
@@ -303,7 +304,7 @@ function AnalyticsDashboardContent() {
                 onClick={() => updateFilters({ mode: 'song' })}
                 className={`min-h-8 rounded-lg px-3 text-sm font-semibold transition ${
                   filters.mode === 'song'
-                    ? 'bg-emerald-500 text-slate-950'
+                    ? 'bg-indigo-500 text-white'
                     : 'text-white/75 hover:text-white'
                 }`}
               >
@@ -312,7 +313,7 @@ function AnalyticsDashboardContent() {
             </div>
             {filters.mode === 'song' ? (
               <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-800/70 px-2.5 py-1.5">
-                <Disc3 className="h-4 w-4 text-emerald-300" />
+                <Disc3 className="h-4 w-4 text-indigo-300" />
                 <select
                   value={filters.songSlug}
                   onChange={(e) => updateFilters({ songSlug: e.target.value })}
@@ -325,82 +326,84 @@ function AnalyticsDashboardContent() {
               </label>
             ) : null}
           </div>
-          <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/78">
-            {summary?.range ? `${summary.range.startDate} → ${summary.range.endDate}` : '时间范围'}
-          </div>
-        </div>
 
-        <div className="mt-2.5 flex flex-wrap items-end justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-white/82">
-              <CalendarRange className="h-4 w-4 text-emerald-300" />
-              时间范围
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {RANGE_OPTIONS.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => updateFilters({ rangePreset: item.value })}
-                  className={`min-h-9 rounded-xl border px-3 text-sm font-medium transition ${
-                    filters.rangePreset === item.value
-                      ? 'border-emerald-400 bg-emerald-500/18 text-emerald-100'
-                      : 'border-white/10 bg-white/5 text-white/78 hover:border-white/20 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            {filters.rangePreset === 'custom' ? (
-              <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
-                <label className="space-y-1">
-                  <span className="text-sm text-white/80">起始日期</span>
-                  <input
-                    type="date"
-                    value={filters.startDate}
-                    onChange={(e) => updateFilters({ startDate: e.target.value })}
-                    className="min-h-10 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/35"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-sm text-white/80">结束日期</span>
-                  <input
-                    type="date"
-                    value={filters.endDate}
-                    onChange={(e) => updateFilters({ endDate: e.target.value })}
-                    className="min-h-10 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/35"
-                  />
-                </label>
-              </div>
-            ) : null}
-          </div>
-
-          <aside className="w-[128px] shrink-0 rounded-xl border border-emerald-400/35 bg-emerald-500/10 p-2">
+          {/* 艺人信息：从大卡片缩为紧凑徽章 */}
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5">
             <div
-              className="h-20 w-full overflow-hidden rounded-lg border border-white/20 bg-slate-700 bg-cover bg-center"
+              className="h-7 w-7 shrink-0 overflow-hidden rounded-full border border-white/20 bg-slate-700 bg-cover bg-center"
               style={currentArtistImage ? { backgroundImage: `url(${currentArtistImage})` } : undefined}
             >
               {!currentArtistImage ? (
                 <div className="flex h-full w-full items-center justify-center text-white/60">
-                  <UserRound className="h-5 w-5" />
+                  <UserRound className="h-3.5 w-3.5" />
                 </div>
               ) : null}
             </div>
-            <p className="mt-1.5 truncate text-sm font-semibold text-white">{currentArtistName}</p>
-          </aside>
+            <p className="max-w-[140px] truncate text-sm font-medium text-white/90">{currentArtistName}</p>
+          </div>
+        </div>
+
+        {/* 第二行：时间范围选择器 */}
+        <div className="mt-4">
+          <p className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-white/82">
+            <CalendarRange className="h-4 w-4 text-indigo-300" />
+            时间范围
+            {summary?.range ? (
+              <span className="ml-1 text-xs font-normal text-white/50">
+                {summary.range.startDate} → {summary.range.endDate}
+              </span>
+            ) : null}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {RANGE_OPTIONS.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => updateFilters({ rangePreset: item.value })}
+                className={`min-h-9 rounded-xl border px-3 text-sm font-medium transition ${
+                  filters.rangePreset === item.value
+                    ? 'border-indigo-400 bg-indigo-500/18 text-indigo-100'
+                    : 'border-white/10 bg-white/5 text-white/78 hover:border-white/20 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {filters.rangePreset === 'custom' ? (
+            <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2 sm:max-w-md">
+              <label className="space-y-1">
+                <span className="text-sm text-white/80">起始日期</span>
+                <input
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => updateFilters({ startDate: e.target.value })}
+                  className="min-h-10 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/35"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm text-white/80">结束日期</span>
+                <input
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(e) => updateFilters({ endDate: e.target.value })}
+                  className="min-h-10 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/35"
+                />
+              </label>
+            </div>
+          ) : null}
         </div>
       </section>
 
       <KpiCards summary={summary} loading={loading} />
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-5 xl:grid-cols-2">
         <TrendChart data={timeseries} loading={loading} />
         <QualifiedRateChart data={timeseries} loading={loading} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-5 xl:grid-cols-2">
         <CampaignTable data={campaigns} loading={loading} />
         <RouteHealthTable data={routeHealth} loading={loading} />
       </div>

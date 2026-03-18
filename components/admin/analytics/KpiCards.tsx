@@ -17,7 +17,7 @@ type KpiItemProps = {
 
 function KpiItem({ label, value, hint, icon: Icon, tone = 'default' }: KpiItemProps) {
   const iconToneClass = tone === 'emerald'
-    ? 'bg-emerald-500/18 text-emerald-300'
+    ? 'bg-spotify-400/18 text-spotify-300'
     : tone === 'cyan'
       ? 'bg-cyan-400/16 text-cyan-300'
       : tone === 'amber'
@@ -25,7 +25,7 @@ function KpiItem({ label, value, hint, icon: Icon, tone = 'default' }: KpiItemPr
         : 'bg-white/10 text-white/82';
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/75 p-3 shadow-[0_10px_28px_rgba(2,6,23,0.3)]">
+    <div className="rounded-2xl border border-white/8 bg-slate-900/75 p-4 shadow-[0_10px_28px_rgba(2,6,23,0.3)]">
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-white/72">{label}</p>
         <span className={`rounded-lg p-2 ${iconToneClass}`}>
@@ -33,7 +33,7 @@ function KpiItem({ label, value, hint, icon: Icon, tone = 'default' }: KpiItemPr
         </span>
       </div>
       <p className="mt-1 text-[30px] font-bold leading-none text-white">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-emerald-300">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-xs text-spotify-300">{hint}</p> : null}
     </div>
   );
 }
@@ -41,7 +41,7 @@ function KpiItem({ label, value, hint, icon: Icon, tone = 'default' }: KpiItemPr
 export default function KpiCards({ summary, loading }: KpiCardsProps) {
   if (loading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, index) => (
           <div key={index} className="h-[112px] animate-pulse rounded-2xl bg-slate-800/70" />
         ))}
@@ -60,7 +60,7 @@ export default function KpiCards({ summary, loading }: KpiCardsProps) {
   const { totals, rates } = summary;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
       <KpiItem label="浏览量" value={totals.view.toLocaleString()} icon={View} />
       <KpiItem
         label="点击量"

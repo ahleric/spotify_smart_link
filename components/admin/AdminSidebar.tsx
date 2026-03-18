@@ -83,25 +83,25 @@ export default function AdminSidebar() {
 
   return (
     <div className="flex h-full flex-col gap-3 p-3 lg:gap-4 lg:p-4">
-      <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 ring-1 ring-white/5">
+      <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3">
         <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-emerald-500/20 p-2 text-emerald-300">
+          <div className="rounded-lg bg-indigo-500/18 p-2 text-indigo-300">
             <RadioTower className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-[11px] tracking-[0.16em] text-emerald-300">PEAKTIDE</p>
+            <p className="text-[11px] tracking-[0.16em] text-indigo-300">PEAKTIDE</p>
             <p className="text-sm font-semibold text-white">后台工作台</p>
           </div>
         </div>
       </div>
 
-      <div className="flex min-h-[170px] basis-[32%] flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/75 p-3 ring-1 ring-white/5">
+      <div className="flex min-h-[170px] basis-[32%] flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/75 p-3">
         <p className="text-xs font-medium text-white/65">工具导航</p>
         <Link
           href={landingRootHref}
           className={`group inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${
             !isDashboard
-              ? 'bg-emerald-500 text-slate-950 shadow-[0_10px_26px_rgba(16,185,129,0.35)]'
+              ? 'bg-indigo-500 text-white shadow-[0_10px_26px_rgba(99,102,241,0.30)]'
               : 'bg-white/5 text-white/82 hover:bg-white/10'
           }`}
         >
@@ -112,7 +112,7 @@ export default function AdminSidebar() {
           href={dashboardRootHref}
           className={`group inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${
             isDashboard
-              ? 'bg-emerald-500 text-slate-950 shadow-[0_10px_26px_rgba(16,185,129,0.35)]'
+              ? 'bg-indigo-500 text-white shadow-[0_10px_26px_rgba(99,102,241,0.30)]'
               : 'bg-white/5 text-white/82 hover:bg-white/10'
           }`}
         >
@@ -121,12 +121,12 @@ export default function AdminSidebar() {
         </Link>
       </div>
 
-      <div className="min-h-0 basis-[68%] rounded-2xl border border-white/10 bg-slate-900/75 p-3 ring-1 ring-white/5">
+      <div className="min-h-0 basis-[68%] rounded-2xl border border-white/10 bg-slate-900/75 p-3">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-medium text-white/65">艺人列表</p>
           <Link
             href="/admin"
-            className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2 text-xs text-white/80 transition hover:bg-emerald-500/20"
+            className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2 text-xs text-white/80 transition hover:bg-indigo-500/15"
           >
             <Plus className="h-3.5 w-3.5" />
             新建
@@ -158,7 +158,7 @@ export default function AdminSidebar() {
                   href={href}
                   className={`group flex min-h-12 items-center gap-2 rounded-xl border px-2.5 py-2 transition ${
                     active
-                      ? 'border-emerald-400/55 bg-emerald-500/18 shadow-[0_10px_24px_rgba(16,185,129,0.2)]'
+                      ? 'border-indigo-400/50 bg-indigo-500/15 shadow-[0_10px_24px_rgba(99,102,241,0.18)]'
                       : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.06]'
                   }`}
                 >

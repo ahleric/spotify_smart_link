@@ -10,6 +10,13 @@ export default {
       fontFamily: {
         sans: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
       },
+      colors: {
+        spotify: {
+          300: '#4ade80',
+          400: '#1DB954',
+          500: '#1aa34a',
+        },
+      },
     },
   },
   plugins: [],

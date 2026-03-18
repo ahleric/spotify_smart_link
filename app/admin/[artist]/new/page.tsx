@@ -109,7 +109,7 @@ export default function NewSongPage() {
       <header className="rounded-2xl border border-white/10 bg-slate-900/75 p-5 ring-1 ring-white/5 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs tracking-[0.15em] text-emerald-300">新建落地页</p>
+            <p className="text-xs tracking-[0.15em] text-indigo-300">新建落地页</p>
             <h1 className="mt-1 text-2xl font-semibold text-white">{artist.name}</h1>
             <p className="text-sm text-white/65">/{artist.slug}</p>
             {error ? <p className="mt-2 text-sm text-rose-400">错误：{error}</p> : null}
@@ -182,19 +182,19 @@ export default function NewSongPage() {
               name="cover"
               type="file"
               accept="image/*"
-              className="block min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 py-2 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-500 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-950"
+              className="block min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 py-2 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-500 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white"
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-sm text-white/85">
-            <span className="inline-flex items-center gap-1"><Link2 className="h-4 w-4 text-emerald-300" />深链状态</span>
-            <span className="font-mono text-emerald-300">{derivedSongDeepLink || '无法生成，请检查链接'}</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-400/25 bg-indigo-500/10 px-3 py-2 text-sm text-white/85">
+            <span className="inline-flex items-center gap-1"><Link2 className="h-4 w-4 text-indigo-300" />深链状态</span>
+            <span className="font-mono text-indigo-300">{derivedSongDeepLink || '无法生成，请检查链接'}</span>
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-semibold text-slate-950 shadow-[0_10px_28px_rgba(16,185,129,0.3)] transition hover:brightness-105 disabled:opacity-60"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(99,102,241,0.3)] transition hover:brightness-105 disabled:opacity-60"
           >
             <Sparkles className="h-4 w-4" />
             {saving ? '提交中...' : '创建歌曲落地页'}
@@ -222,7 +222,7 @@ function Field({ label, name, placeholder, value, onChange, required }: FieldPro
         {required ? <span className="text-rose-300"> *</span> : null}
       </span>
       <input
-        className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/30"
+        className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/30"
         name={name}
         value={value}
         required={required}

@@ -91,7 +91,7 @@ export default function AdminHome() {
       <header className="rounded-2xl border border-white/10 bg-slate-900/75 p-5 ring-1 ring-white/5 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs tracking-[0.16em] text-emerald-300">后台工具</p>
+            <p className="text-xs tracking-[0.16em] text-indigo-300">后台工具</p>
             <h1 className="mt-1 text-2xl font-semibold text-white md:text-3xl">落地页工具</h1>
             <p className="mt-2 max-w-2xl text-sm text-white/70 md:text-base">
               创建艺人档案，进入艺人页管理歌曲落地页。
@@ -108,7 +108,7 @@ export default function AdminHome() {
             </Link>
             <Link
               href={analyticsEntryHref}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-sm font-semibold text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition hover:brightness-105"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-500 px-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(99,102,241,0.28)] transition hover:brightness-105"
             >
               <BarChart3 className="h-4 w-4" />
               打开仪表盘
@@ -123,7 +123,7 @@ export default function AdminHome() {
           className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/75 p-5 ring-1 ring-white/5"
         >
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-emerald-500/15 p-2 text-emerald-300">
+            <div className="rounded-lg bg-indigo-500/15 p-2 text-indigo-300">
               <UserRoundPlus className="h-4 w-4" />
             </div>
             <h2 className="text-lg font-semibold text-white">创建艺人档案</h2>
@@ -132,7 +132,7 @@ export default function AdminHome() {
           <label className="space-y-1">
             <span className="text-sm text-white/82">艺人名称</span>
             <input
-              className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/30"
+              className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/30"
               name="name"
               value={formState.name}
               onChange={(e) => setFormState((state) => ({ ...state, name: e.target.value }))}
@@ -144,7 +144,7 @@ export default function AdminHome() {
           <label className="space-y-1">
             <span className="text-sm text-white/82">Slug（可空）</span>
             <input
-              className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/30"
+              className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/30"
               name="slug"
               value={formState.slug}
               onChange={(e) => setFormState((state) => ({ ...state, slug: e.target.value }))}
@@ -156,7 +156,7 @@ export default function AdminHome() {
           <label className="space-y-1">
             <span className="text-sm text-white/82">Meta Pixel ID（可空）</span>
             <input
-              className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/30"
+              className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/30"
               name="metaPixelId"
               value={formState.metaPixelId}
               onChange={(e) => setFormState((state) => ({ ...state, metaPixelId: e.target.value }))}
@@ -167,7 +167,7 @@ export default function AdminHome() {
           <label className="space-y-1">
             <span className="text-sm text-white/82">Conversions API Token（可空）</span>
             <input
-              className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-500/30"
+              className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 text-sm text-white outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/30"
               name="facebookAccessToken"
               value={formState.facebookAccessToken}
               onChange={(e) => setFormState((state) => ({ ...state, facebookAccessToken: e.target.value }))}
@@ -181,14 +181,14 @@ export default function AdminHome() {
               name="photo"
               type="file"
               accept="image/*"
-              className="block min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 py-2 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-500 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-950"
+              className="block min-h-11 w-full rounded-xl border border-white/10 bg-slate-800/85 px-3 py-2 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-500 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white"
             />
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-semibold text-slate-950 shadow-[0_10px_28px_rgba(16,185,129,0.3)] transition hover:brightness-105 disabled:opacity-60"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(99,102,241,0.3)] transition hover:brightness-105 disabled:opacity-60"
           >
             {saving ? '提交中...' : '创建艺人'}
           </button>
@@ -215,7 +215,7 @@ export default function AdminHome() {
             {artists.map((artist) => (
               <div
                 key={artist.id}
-                className="group flex gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-emerald-400/55 hover:bg-white/[0.05]"
+                className="group flex gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-indigo-400/50 hover:bg-white/[0.05]"
               >
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/15 bg-slate-800">
                   {artist.photo_url ? (
@@ -226,12 +226,12 @@ export default function AdminHome() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-semibold text-white">{artist.name}</p>
                   <p className="truncate text-sm text-white/62">/{artist.slug}</p>
-                  <p className="mt-1 text-xs text-emerald-300">Pixel：{artist.meta_pixel_id || '未填'}</p>
+                  <p className="mt-1 text-xs text-indigo-300">Pixel：{artist.meta_pixel_id || '未填'}</p>
                   <p className="text-xs text-white/55">CAPI：{artist.facebook_access_token ? '已配置' : '未填'}</p>
                   <div className="mt-2 flex gap-2">
                     <Link
                       href={`/admin/${artist.slug}` as Route}
-                      className="inline-flex min-h-8 items-center rounded-lg bg-emerald-500/88 px-2.5 text-xs font-semibold text-slate-950 transition hover:brightness-105"
+                      className="inline-flex min-h-8 items-center rounded-lg bg-indigo-500/88 px-2.5 text-xs font-semibold text-slate-950 transition hover:brightness-105"
                     >
                       进入落地页
                     </Link>
