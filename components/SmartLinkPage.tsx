@@ -39,6 +39,12 @@ type DispatchTrackOptions = {
   context?: Record<string, unknown>;
   route?: Record<string, unknown>;
   extraAttribution?: Record<string, string>;
+  /** 价值优化（VBO）：额外发送的标准事件 ID */
+  vboEventId?: string;
+  /** 价值优化（VBO）：标准事件名称，如 ViewContent / InitiateCheckout / Lead */
+  vboEventName?: string;
+  /** 价值优化（VBO）：事件价值 */
+  vboValue?: number;
 };
 
 const ATTR_PARAM_KEYS = [
@@ -358,6 +364,14 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       route: routePayload,
       identity,
       forwardToFacebook: options.forwardToFacebook ?? true,
+      ...(options.vboEventName ? {
+        vbo: {
+          eventId: options.vboEventId,
+          eventName: options.vboEventName,
+          value: options.vboValue,
+          currency: 'USD',
+        },
+      } : {}),
     });
 
     const sent =
@@ -387,12 +401,19 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
 
     window.fbq?.('track', 'PageView', undefined, { eventID: viewEventId });
 
+    // 标准事件：ViewContent（带价值分数，用于广告价值优化）
+    const viewVboId = buildEventId('vbo-view');
+    window.fbq?.('track', 'ViewContent', { value: 0.5, currency: 'USD', content_name: 'SmartLinkView' }, { eventID: viewVboId });
+
     dispatchTrackEvent('SmartLinkView', {
       eventId: viewEventId,
       context: toEventContext(detectRoutingContext(navigator.userAgent || '')),
       route: { strategy: 'view', reason: 'page-load' },
       forwardToFacebook: true,
       usePixel: true,
+      vboEventId: viewVboId,
+      vboEventName: 'ViewContent',
+      vboValue: 0.5,
     });
   }, [dispatchTrackEvent, viewEventId]);
 
@@ -424,12 +445,19 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     };
     const clickEventId = testEventCode || buildEventId('click');
 
+    // 标准事件：InitiateCheckout（带价值分数，用于广告价值优化）
+    const clickVboId = buildEventId('vbo-click');
+    window.fbq?.('track', 'InitiateCheckout', { value: 1, currency: 'USD', content_name: 'SmartLinkClick' }, { eventID: clickVboId });
+
     dispatchTrackEvent('SmartLinkClick', {
       eventId: clickEventId,
       context: sharedContext,
       route: sharedRoute,
       forwardToFacebook: true,
       usePixel: true,
+      vboEventId: clickVboId,
+      vboEventName: 'InitiateCheckout',
+      vboValue: 1,
     });
 
     dispatchTrackEvent('SmartLinkRouteChosen', {
@@ -468,16 +496,25 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       window.removeEventListener('blur', handleWindowBlur);
     };
 
+    // 为 OpenSuccess 预生成 VBO 事件 ID（闭包内共享，确保只发一次）
+    const openSuccessVboId = buildEventId('vbo-lead');
+
     const markOpenSuccess = (signal: 'visibilitychange' | 'pagehide' | 'blur') => {
       if (settled) return;
       settled = true;
       cleanup();
+
+      // 标准事件：Lead（带价值分数，用于广告价值优化）
+      window.fbq?.('track', 'Lead', { value: 5, currency: 'USD', content_name: 'SmartLinkOpenSuccess' }, { eventID: openSuccessVboId });
 
       dispatchTrackEvent('SmartLinkOpenSuccess', {
         context: sharedContext,
         route: { ...sharedRoute, open_target: openTarget, success_signal: signal },
         forwardToFacebook: true,
         usePixel: true,
+        vboEventId: openSuccessVboId,
+        vboEventName: 'Lead',
+        vboValue: 5,
       });
 
       if (shouldEmitQualified(window.location.pathname, qualifiedCooldownMs)) {

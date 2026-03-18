@@ -7,6 +7,13 @@ import { isTrackingSignatureEnabled, verifyTrackingAuthToken } from '@/lib/track
 // Cloudflare Pages 需 Edge Runtime，确保本路由在 Edge 环境下运行。
 export const runtime = 'edge';
 
+type VboPayload = {
+  eventId?: string;
+  eventName?: string;
+  value?: number;
+  currency?: string;
+};
+
 type TrackEventBody = {
   eventName?: string;
   eventId?: string;
@@ -21,6 +28,8 @@ type TrackEventBody = {
     sessionId?: string;
   } | null;
   forwardToFacebook?: boolean;
+  /** 价值优化（VBO）：额外发送的标准事件 */
+  vbo?: VboPayload | null;
 };
 
 type ForwardStatus =
@@ -258,6 +267,7 @@ export async function POST(request: Request) {
   const route = rawBody.route;
   const identity = rawBody.identity;
   const forwardToFacebook = rawBody.forwardToFacebook ?? true;
+  const vbo = rawBody.vbo ?? null;
 
   const headerList = headers();
   const userAgent = headerList.get('user-agent') ?? '';
@@ -439,23 +449,45 @@ export async function POST(request: Request) {
     });
   }
 
-  const payload = {
-    data: [
-      {
-        event_name: eventName,
-        event_time: Math.floor(Date.now() / 1000),
-        action_source: 'website',
-        event_source_url: normalizedEventSourceUrl || referer || '',
-        event_id: eventId || undefined,
-        user_data: {
-          client_user_agent: userAgent,
-          client_ip_address: ip,
-          fbp,
-          fbc,
-          external_id: externalIdHash,
-        },
+  const eventTime = Math.floor(Date.now() / 1000);
+  const sharedUserData = {
+    client_user_agent: userAgent,
+    client_ip_address: ip,
+    fbp,
+    fbc,
+    external_id: externalIdHash,
+  };
+
+  const events: Record<string, unknown>[] = [
+    {
+      event_name: eventName,
+      event_time: eventTime,
+      action_source: 'website',
+      event_source_url: normalizedEventSourceUrl || referer || '',
+      event_id: eventId || undefined,
+      user_data: sharedUserData,
+    },
+  ];
+
+  // VBO：额外发送一个带价值的标准事件（与原有自定义事件并行，不替换）
+  if (vbo?.eventName && typeof vbo.value === 'number') {
+    events.push({
+      event_name: vbo.eventName,
+      event_time: eventTime,
+      action_source: 'website',
+      event_source_url: normalizedEventSourceUrl || referer || '',
+      event_id: vbo.eventId || undefined,
+      user_data: sharedUserData,
+      custom_data: {
+        value: vbo.value,
+        currency: vbo.currency || 'USD',
+        content_name: eventName,
       },
-    ],
+    });
+  }
+
+  const payload = {
+    data: events,
     test_event_code: testEventCode || undefined,
   };
 
