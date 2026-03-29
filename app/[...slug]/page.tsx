@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import SmartLinkPage from '@/components/SmartLinkPage';
 import { getSupabaseClient } from '@/lib/supabase';
 import type { ReleaseData } from '@/lib/config';
@@ -8,8 +9,47 @@ import { createTrackingAuthToken } from '@/lib/tracking-auth';
 export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
 
-const getRelease = async (slugSegments: string[]): Promise<ReleaseData> => {
-  const slug = slugSegments.join('/');
+const RELEASE_CACHE_TTL_MS = 60_000;
+const RELEASE_CACHE_MAX_ENTRIES = 300;
+
+type ReleaseCacheEntry = {
+  expiresAt: number;
+  value: Promise<ReleaseData>;
+};
+
+const releaseCache = new Map<string, ReleaseCacheEntry>();
+
+function normalizeSlugSegments(slugSegments: string[]) {
+  return slugSegments
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .join('/')
+    .toLowerCase();
+}
+
+function pruneReleaseCache(now: number) {
+  for (const [key, entry] of Array.from(releaseCache.entries())) {
+    if (entry.expiresAt <= now) {
+      releaseCache.delete(key);
+    }
+  }
+
+  if (releaseCache.size <= RELEASE_CACHE_MAX_ENTRIES) {
+    return;
+  }
+
+  const overflow = releaseCache.size - RELEASE_CACHE_MAX_ENTRIES;
+  let removed = 0;
+  for (const key of Array.from(releaseCache.keys())) {
+    releaseCache.delete(key);
+    removed += 1;
+    if (removed >= overflow) {
+      break;
+    }
+  }
+}
+
+async function fetchReleaseFromSupabase(slug: string): Promise<ReleaseData> {
   if (!slug) notFound();
 
   const supabase = getSupabaseClient('service');
@@ -43,7 +83,41 @@ const getRelease = async (slugSegments: string[]): Promise<ReleaseData> => {
     routingConfig,
     trackingConfig,
   };
-};
+}
+
+const getReleaseBySlug = cache(async (rawSlug: string): Promise<ReleaseData> => {
+  const slug = rawSlug.trim().toLowerCase();
+  if (!slug) notFound();
+
+  const now = Date.now();
+  const cached = releaseCache.get(slug);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
+  if (cached) {
+    releaseCache.delete(slug);
+  }
+
+  pruneReleaseCache(now);
+
+  const value = fetchReleaseFromSupabase(slug);
+  releaseCache.set(slug, {
+    value,
+    expiresAt: now + RELEASE_CACHE_TTL_MS,
+  });
+
+  try {
+    return await value;
+  } catch (error) {
+    releaseCache.delete(slug);
+    throw error;
+  }
+});
+
+async function getRelease(slugSegments: string[]): Promise<ReleaseData> {
+  return getReleaseBySlug(normalizeSlugSegments(slugSegments));
+}
 
 export async function generateMetadata({
   params,

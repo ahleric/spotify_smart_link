@@ -666,10 +666,11 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
         />
         <Image
           src={releaseData.coverImage}
-          alt="background"
+          alt=""
           fill
-          quality={45}
+          quality={28}
           sizes="100vw"
+          aria-hidden="true"
           className="object-cover scale-110 blur-2xl md:blur-3xl brightness-[0.72] md:brightness-[0.44] saturate-125 contrast-[1.08]"
         />
         <div
@@ -696,7 +697,8 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
             alt={`${releaseData.trackTitle} Artwork`}
             width={900}
             height={900}
-            sizes="(max-width: 768px) 78vw, 420px"
+            sizes="(max-width: 768px) 76vw, 380px"
+            quality={82}
             className="h-auto w-full object-cover"
             priority
             loading="eager"
@@ -730,7 +732,6 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
           width={120}
           height={36}
           className="h-7 w-auto"
-          priority
         />
         <button
           onClick={handlePlay}
