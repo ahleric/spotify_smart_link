@@ -47,6 +47,14 @@ type DispatchTrackOptions = {
   vboValue?: number;
 };
 
+type RetryPromptState = {
+  deepLinkTarget: string;
+  openTarget: string;
+  context: Record<string, unknown>;
+  route: Record<string, unknown>;
+  hint: string;
+};
+
 const ATTR_PARAM_KEYS = [
   'utm_source',
   'utm_medium',
@@ -190,18 +198,21 @@ function buildRoutingPlan(
     context.os === 'android' && context.inAppBrowser === 'instagram';
   const isAndroidFacebook =
     context.os === 'android' && context.inAppBrowser === 'facebook';
+  const isAndroid = context.os === 'android';
   const isIOSFacebook = context.os === 'ios' && context.inAppBrowser === 'facebook';
   const isFacebookInApp = context.inAppBrowser === 'facebook';
 
   const baseDeepLinkDelay =
-    isAndroidInstagram || isAndroidFacebook || isIOSFacebook
+    isAndroid || isIOSFacebook
       ? 0
       : context.os === 'ios'
         ? 180
         : 120;
   const baseFallbackDelay =
     isAndroidInstagram || isAndroidFacebook
-      ? 3200
+      ? 3800
+      : isAndroid
+        ? 1500
       : isIOSFacebook
         ? 2400
         : context.os === 'ios'
@@ -233,7 +244,9 @@ function buildRoutingPlan(
     fallbackDelayMs + 200,
     MAX_DELAY_MS,
     isAndroidInstagram || isAndroidFacebook
-      ? Math.max(fallbackDelayMs + 3200, 6800)
+      ? Math.max(fallbackDelayMs + 3600, 7600)
+      : isAndroid
+        ? Math.max(fallbackDelayMs + 1800, 3200)
       : isFacebookInApp
         ? Math.max(fallbackDelayMs + 2200, 5600)
       : Math.max(fallbackDelayMs + 1200, 2200),
@@ -258,7 +271,7 @@ function buildAndroidSpotifyIntentUrl(deepLink: string, webLink: string) {
       : '';
   if (!basePath) return deepLink;
   const fallbackUrl = encodeURIComponent(webLink.trim());
-  return `intent://${basePath}#Intent;scheme=spotify;package=com.spotify.music;S.browser_fallback_url=${fallbackUrl};end`;
+  return `intent://${basePath}#Intent;scheme=spotify;package=com.spotify.music;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=${fallbackUrl};end`;
 }
 
 function shouldEmitQualified(pathname: string, cooldownMs: number) {
@@ -301,6 +314,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     [],
   );
   const [mounted, setMounted] = useState(false);
+  const [retryPrompt, setRetryPrompt] = useState<RetryPromptState | null>(null);
   const openingRef = useRef(false);
   const qualifiedCooldownMs = useMemo(
     () => clampMs(releaseData.trackingConfig?.qualifiedCooldownMs, 60000, 604800000, 21600000),
@@ -393,6 +407,24 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     setMounted(true);
   }, []);
 
+  const handleRetryOpen = useCallback(() => {
+    if (!retryPrompt) return;
+
+    dispatchTrackEvent('SmartLinkOpenAttempt', {
+      context: retryPrompt.context,
+      route: {
+        ...retryPrompt.route,
+        open_target: retryPrompt.openTarget,
+        retry_attempt: true,
+      },
+      forwardToFacebook: false,
+      usePixel: false,
+    });
+
+    setRetryPrompt(null);
+    window.location.assign(retryPrompt.deepLinkTarget);
+  }, [dispatchTrackEvent, retryPrompt]);
+
   // 单次发送 PageView 和 SmartLinkView
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -421,6 +453,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     if (typeof window === 'undefined') return;
     if (openingRef.current) return;
     openingRef.current = true;
+    setRetryPrompt(null);
 
     const routingContext = detectRoutingContext(navigator.userAgent || '');
     const routingPlan = buildRoutingPlan(releaseData, routingContext);
@@ -484,6 +517,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     let deepLinkTimer = 0;
     let safetyTimer = 0;
     let blurSignalTimer = 0;
+    let retryPromptTimer = 0;
 
     const cleanup = () => {
       openingRef.current = false;
@@ -491,6 +525,8 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       window.clearTimeout(deepLinkTimer);
       window.clearTimeout(safetyTimer);
       window.clearTimeout(blurSignalTimer);
+      window.clearTimeout(retryPromptTimer);
+      setRetryPrompt(null);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('blur', handleWindowBlur);
@@ -568,6 +604,25 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
       deepLinkTimer = window.setTimeout(attemptDeepLinkOpen, routingPlan.deepLinkDelayMs);
     }
 
+    const shouldSurfaceRetryPrompt =
+      routingContext.os === 'android' || routingContext.inAppBrowser === 'facebook';
+    if (shouldSurfaceRetryPrompt) {
+      retryPromptTimer = window.setTimeout(() => {
+        if (settled) return;
+        if (document.visibilityState !== 'visible' || !document.hasFocus()) return;
+        setRetryPrompt({
+          deepLinkTarget,
+          openTarget,
+          context: sharedContext,
+          route: sharedRoute,
+          hint:
+            routingContext.inAppBrowser === 'facebook'
+              ? 'If Spotify did not open, Facebook may need a second tap.'
+              : 'If Spotify did not open, tap again to retry.',
+        });
+      }, 900);
+    }
+
     fallbackTimer = window.setTimeout(() => {
       if (settled) return;
       // Some in-app browsers keep the document visible state stale while losing focus.
@@ -595,6 +650,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
     dispatchTrackEvent,
     qualifiedCooldownMs,
     releaseData,
+    setRetryPrompt,
     testEventCode,
   ]);
 
@@ -682,6 +738,19 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
         >
           Play
         </button>
+        {retryPrompt ? (
+          <div className="w-full rounded-2xl border border-black/10 bg-black/[0.04] px-3 py-3 text-center">
+            <p className="text-xs font-medium text-black/65">
+              {retryPrompt.hint}
+            </p>
+            <button
+              onClick={handleRetryOpen}
+              className="mt-2 w-full rounded-xl bg-black px-3 py-2 text-sm font-semibold text-white transition active:scale-[0.98]"
+            >
+              Open Spotify Again
+            </button>
+          </div>
+        ) : null}
       </div>
     </main>
   );
