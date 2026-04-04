@@ -82,7 +82,7 @@ export default function AdminSidebar() {
     : '/admin/analytics';
 
   return (
-    <div className="flex h-full flex-col gap-3 p-3 lg:gap-4 lg:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden p-3 lg:gap-4 lg:p-4">
       <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3">
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-indigo-500/18 p-2 text-indigo-300">
@@ -95,7 +95,7 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-      <div className="flex min-h-[170px] basis-[32%] flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/75 p-3">
+      <div className="flex shrink-0 flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/75 p-3">
         <p className="text-xs font-medium text-white/65">工具导航</p>
         <Link
           href={landingRootHref}
@@ -121,7 +121,7 @@ export default function AdminSidebar() {
         </Link>
       </div>
 
-      <div className="min-h-0 basis-[68%] rounded-2xl border border-white/10 bg-slate-900/75 p-3">
+      <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-slate-900/75 p-3">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-medium text-white/65">艺人列表</p>
           <Link
@@ -133,7 +133,7 @@ export default function AdminSidebar() {
           </Link>
         </div>
 
-        <div className="max-h-[52vh] space-y-2 overflow-auto pr-1 lg:max-h-[calc(100vh-300px)]">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {loading ? (
             <div className="flex min-h-24 items-center justify-center text-white/65">
               <Loader2 className="h-4 w-4 animate-spin" />
