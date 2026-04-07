@@ -315,6 +315,7 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
   );
   const [mounted, setMounted] = useState(false);
   const [retryPrompt, setRetryPrompt] = useState<RetryPromptState | null>(null);
+  const [openInBrowserUrl, setOpenInBrowserUrl] = useState<string | null>(null);
   const openingRef = useRef(false);
   const qualifiedCooldownMs = useMemo(
     () => clampMs(releaseData.trackingConfig?.qualifiedCooldownMs, 60000, 604800000, 21600000),
@@ -405,6 +406,13 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
 
   useEffect(() => {
     setMounted(true);
+    const ctx = detectRoutingContext(navigator.userAgent || '');
+    if (ctx.os === 'android' && ctx.inAppBrowser === 'facebook') {
+      const loc = window.location;
+      setOpenInBrowserUrl(
+        `intent://${loc.host}${loc.pathname}${loc.search}#Intent;scheme=https;action=android.intent.action.VIEW;end`
+      );
+    }
   }, []);
 
   const handleRetryOpen = useCallback(() => {
@@ -735,10 +743,19 @@ function PageContent({ releaseData }: SmartLinkPageProps) {
         />
         <button
           onClick={handlePlay}
-          className="cta-ripple relative w-full rounded-2xl bg-[#1DB954] px-4 py-3 text-lg font-bold text-white shadow-[0_10px_24px_rgba(29,185,84,0.35)] transition transform-gpu active:scale-95 active:shadow-[inset_0_4px_12px_rgba(0,0,0,0.25)] active:brightness-95"
+          className="cta-ripple relative w-full rounded-2xl bg-[#1DB954] px-4 py-3 text-lg font-bold text-white shadow-[0_10px_24px_rgba(29,185,84,0.35)] transition transform-gpu active:scale-95 active:shadow-[inset_0_4px_12px_rgba(0,0,0,0.25)] active:brightness-95 touch-action-manipulation"
+          style={{ touchAction: 'manipulation' }}
         >
           Play
         </button>
+        {openInBrowserUrl ? (
+          <a
+            href={openInBrowserUrl}
+            className="mt-1 text-xs font-medium text-black/45 underline underline-offset-2 transition active:text-black/70"
+          >
+            Open in browser instead
+          </a>
+        ) : null}
         {retryPrompt ? (
           <div className="w-full rounded-2xl border border-black/10 bg-black/[0.04] px-3 py-3 text-center">
             <p className="text-xs font-medium text-black/65">
