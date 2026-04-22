@@ -12,6 +12,7 @@ import {
   deriveSpotifyDeepLink,
   normalizeSlug,
 } from '@/lib/song-utils';
+import { resizeImageFile } from '@/lib/client-image';
 import type { ArtistRow } from '@/lib/types';
 
 export default function NewSongPage() {
@@ -78,6 +79,13 @@ export default function NewSongPage() {
     const formData = new FormData(form);
     if (derivedSongSlug) {
       formData.set('songSlug', derivedSongSlug);
+    }
+    const cover = formData.get('cover');
+    if (cover instanceof File && cover.size > 0) {
+      const resized = await resizeImageFile(cover);
+      if (resized !== cover) {
+        formData.set('cover', resized, resized.name);
+      }
     }
     try {
       const res = await fetch(`/api/admin/artists/${artistSlug}/songs`, {

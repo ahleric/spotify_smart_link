@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { BarChart3, FolderKanban, Music3, UserRoundPlus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { buildArtistSlug, normalizeSlug } from '@/lib/song-utils';
+import { resizeImageFile } from '@/lib/client-image';
 import type { ArtistRow } from '@/lib/types';
 
 type ArtistListItem = Pick<
@@ -53,6 +54,14 @@ export default function AdminHome() {
     const formData = new FormData(form);
     if (derivedSlug) {
       formData.set('slug', derivedSlug);
+    }
+
+    const photo = formData.get('photo');
+    if (photo instanceof File && photo.size > 0) {
+      const resized = await resizeImageFile(photo);
+      if (resized !== photo) {
+        formData.set('photo', resized, resized.name);
+      }
     }
 
     try {
